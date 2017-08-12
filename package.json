@@ -1,0 +1,13 @@
+{
+  "name": "@backstroke/worker",
+  "version": "1.0.0",
+  "description": "A worker that eats off a queue to perform backstroke link updates",
+  "main": "index.js",
+  "repository": "https://github.com/backstrokeapp/worker",
+  "author": "Ryan Gaus",
+  "license": "MIT",
+  "dependencies": {
+    "redis": "^2.8.0",
+    "rsmq": "^0.8.2"
+  }
+}
