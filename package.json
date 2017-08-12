@@ -9,5 +9,8 @@
   "dependencies": {
     "redis": "^2.8.0",
     "rsmq": "^0.8.2"
+  },
+  "scripts": {
+    "start": "node index.js"
   }
 }
