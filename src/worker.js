@@ -1,3 +1,5 @@
+const paginateRequest = require('./helpers').paginateRequest;
+
 const OK = 'OK',
       RUNNING = 'RUNNING',
       ERROR = 'ERROR';
@@ -138,7 +140,7 @@ module.exports = async function processBatch(
         status: ERROR,
         startedAt,
         finishedAt: (new Date()).toISOString(),
-        output: {error},
+        output: {error: error.message, stack: error.stack},
       });
     }
   }
