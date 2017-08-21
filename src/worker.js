@@ -4,7 +4,7 @@ const OK = 'OK',
       RUNNING = 'RUNNING',
       ERROR = 'ERROR';
 
-async function process(
+async function processFromQueue(
   link,
   user,
   debug,
@@ -106,7 +106,7 @@ module.exports = async function processBatch(
     const user = webhook.data.user;
 
     // Log the type of update that is happening.
-    console.log(`=> * Handling webhook ${webhook.id}:`);
+    process.env.NODE_ENV !== 'test' && console.log(`=> * Handling webhook ${webhook.id}:`);
     debug(`From: ${link.upstreamOwner}/${link.upstreamRepo}@${link.upstreamBranch}`);
     if (link.forkType === 'fork-all') {
       debug(`To: all forks @ ${link.upstreamBranch} (uses upstream branch)`);
@@ -116,7 +116,7 @@ module.exports = async function processBatch(
 
     // Perform the action.
     try {
-      const output = await process(
+      const output = await processFromQueue(
         link,
         user,
         debug,
