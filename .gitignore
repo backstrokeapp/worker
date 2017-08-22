@@ -1,2 +1,4 @@
 node_modules/
 .*.sw*
+coverage/
+yarn-error.log
