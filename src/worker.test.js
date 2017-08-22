@@ -3,7 +3,6 @@ const assert = require('assert');
 
 const processBatch = require('./worker');
 
-
 const MockWebhookQueue = {
   queue: [],
   reset() {
@@ -32,87 +31,7 @@ const MockWebhookStatusStore = {
   },
 };
 
-describe.skip('webhook worker', () => {
-  let userData, linkData;
-
-  afterEach(() => {
-    MockWebhookQueue.reset();
-  });
-
-  it('should handle a link from an upstream to a bunch of forks', async () => {
-    const createPullRequest = sinon.stub().yields([null]);
-    const getForksForRepo = sinon.stub().resolves([{
-      owner: {login: 'foo'},
-      name: 'bar',
-    }]);
-    const didRepoOptOut = sinon.stub().resolves(false);
-
-    const enqueuedAs = await MockWebhookQueue.push({
-      type: 'MANUAL',
-      user: {
-        id: 1,
-        username: '1egoman',
-        email: null,
-        githubId: '1704236',
-        accessToken: 'ACCESS TOKEN',
-        publicScope: false,
-        createdAt: '2017-08-09T12:00:36.000Z',
-        lastLoggedInAt: '2017-08-16T12:50:40.203Z',
-        updatedAt: '2017-08-16T12:50:40.204Z',
-      },
-      link: {
-        id: 8,
-        name: 'foo',
-        enabled: true,
-        webhookId: '37948270678a440a97db01ebe71ddda2',
-        lastSyncedAt: '2017-08-17T11:37:22.999Z',
-        upstreamType: 'repo',
-        upstreamOwner: '1egoman',
-        upstreamRepo: 'biome',
-        upstreamIsFork: null,
-        upstreamBranches: '["inject","master"]',
-        upstreamBranch: 'master',
-        forkType: 'repo',
-        forkOwner: 'rgaus',
-        forkRepo: 'biome',
-        forkBranches: '["master"]',
-        forkBranch: 'master',
-        createdAt: '2017-08-11T10:17:09.614Z',
-        updatedAt: '2017-08-17T11:37:23.001Z',
-        ownerId: 1,
-        owner: {
-          id: 1,
-          username: '1egoman',
-          email: null,
-          githubId: '1704236',
-          accessToken: 'ACCESS TOKEN',
-          publicScope: false,
-          createdAt: '2017-08-09T12:00:36.000Z',
-          lastLoggedInAt: '2017-08-16T12:50:40.203Z',
-          updatedAt: '2017-08-16T12:50:40.204Z',
-        }
-      },
-    });
-
-    // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      console.log.bind(console, '* '),
-      getForksForRepo,
-      createPullRequest,
-      didRepoOptOut
-    );
-
-    // Make sure that it worked
-    const response = MockWebhookStatusStore.keys[enqueuedAs].status;
-    assert.equal(response.status, 'OK');
-    // response.output
-  });
-});
-
-
-describe('webhook', () => {
+describe('webhook worker', () => {
   it('should create a pull request when given a single fork', async () => {
     const createPullRequest = require('./helpers').createPullRequest;
     const getForksForRepo = sinon.stub().resolves([{

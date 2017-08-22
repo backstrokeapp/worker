@@ -14,5 +14,6 @@
   "devDependencies": {
     "jest": "^20.0.4",
     "sinon": "^3.2.1"
-  }
+  },
+  "version": "1.0.2"
 }
