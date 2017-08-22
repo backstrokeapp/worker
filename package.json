@@ -1,5 +1,6 @@
 {
   "name": "@backstroke/worker",
+  "version": "1.0.2",
   "dependencies": {
     "bluebird": "^3.5.0",
     "chalk": "^2.1.0",
@@ -9,11 +10,11 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "test": "NODE_ENV=test jest --watch"
+    "test": "NODE_ENV=test jest --watch",
+    "test-ci": "CI=true NODE_ENV=test jest"
   },
   "devDependencies": {
     "jest": "^20.0.4",
     "sinon": "^3.2.1"
-  },
-  "version": "1.0.2"
+  }
 }
