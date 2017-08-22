@@ -9,7 +9,7 @@ jobs:
       - checkout
       - run:
           name: "Add npm token to npmrc"
-          command: echo "//npmregistry.density.rodeo/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
+          command: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
       - run:
           name: "Install js dependencies"
           command: yarn
