@@ -10,6 +10,7 @@
   },
   "scripts": {
     "start": "node src/index.js",
+    "start:once": "node src/index.js --once",
     "test": "NODE_ENV=test jest --watch",
     "test-ci": "CI=true NODE_ENV=test jest"
   },

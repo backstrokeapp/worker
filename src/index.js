@@ -102,20 +102,28 @@ if (require.main === module) {
   }
 
   // Kick off the batch!
-  processBatch(
-    WebhookQueue,
-    WebhookStatusStore,
-    logger,
-    getForksForRepo,
-    {default: createPullRequest, mock: mockCreatePullRequest}[args.pr || 'default'],
-    didRepoOptOut,
-    githubPullRequestsCreate
-  ).then(() => {
-    console.log('* Success!');
-    final();
-  }).catch(err => {
-    console.error('Error:');
-    console.error(err.stack);
-    final();
-  });
+  function go() {
+    processBatch(
+      WebhookQueue,
+      WebhookStatusStore,
+      logger,
+      getForksForRepo,
+      {default: createPullRequest, mock: mockCreatePullRequest}[args.pr || 'default'],
+      didRepoOptOut,
+      githubPullRequestsCreate
+    ).then(() => {
+      console.log('* Success!');
+      final();
+    }).catch(err => {
+      console.error('Error:');
+      console.error(err.stack);
+      final();
+    });
+  }
+
+  if (args.once) {
+    go();
+  } else {
+    setInterval(go, process.env.WORKER_POLL_INTERVAL || 5000);
+  }
 }
