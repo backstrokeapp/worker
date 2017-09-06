@@ -102,7 +102,7 @@ if (require.main === module) {
   }
 
   // Kick off the batch!
-  function go() {
+  function go(done) {
     processBatch(
       WebhookQueue,
       WebhookStatusStore,
@@ -113,17 +113,17 @@ if (require.main === module) {
       githubPullRequestsCreate
     ).then(() => {
       console.log('* Success!');
-      final();
+      done();
     }).catch(err => {
       console.error('Error:');
       console.error(err.stack);
-      final();
+      done();
     });
   }
 
   if (args.once) {
-    go();
+    go(final);
   } else {
-    setInterval(go, process.env.WORKER_POLL_INTERVAL || 5000);
+    setInterval(go.bind(null, a => a), process.env.WORKER_POLL_INTERVAL || 5000);
   }
 }
