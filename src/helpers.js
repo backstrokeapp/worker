@@ -34,7 +34,7 @@ function getForksForRepo(user, args) {
       if (err) {
         reject(err);
       } else {
-        resolve(res);
+        resolve(res.data);
       }
     });
   });
@@ -96,7 +96,7 @@ async function createPullRequest(user, link, fork, debug, didRepoOptOut, githubP
         repo: fork.repo,
         title: generatePullRequestTitle(link.upstreamOwner, link.upstreamRepo, link.upstreamBranch),
         head: `${link.upstreamOwner}:${link.upstreamBranch}`,
-        base: fork.branch,
+        base: link.forkType === 'fork-all' ? link.upstreamBranch : link.forkBranch,
         body: generatePullRequestBody(link.upstreamOwner, link.upstreamRepo, link.upstreamBranch),
         maintainer_can_modify: false,
       }, err => {
@@ -119,4 +119,5 @@ module.exports = {
   paginateRequest,
   getForksForRepo,
   createPullRequest,
+  didRepoOptOut,
 };

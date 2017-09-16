@@ -116,7 +116,7 @@ if (require.main === module) {
       done();
     }).catch(err => {
       console.error('Error:');
-      console.error(err.stack);
+      console.error(err.stack ? err.stack : err);
       done();
     });
   }
