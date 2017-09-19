@@ -47,7 +47,9 @@ function didRepoOptOut(github, owner, repo) {
     github.search.issues({
       q: `repo:${owner}/${repo} is:pr label:optout`,
     }, (err, issues) => {
-      if (err) {
+      if (err.errors && err.errors && err.errors.find(i => i.code === 'invalid')) {
+        reject(new Error(`Repository ${owner}/${repo} doesn't exist.`));
+      } else if (err) {
         reject(err);
       } else {
         resolve(issues.total_count > 0);
@@ -67,7 +69,7 @@ button.
 
 Have fun!
 --------
-Created by [Backstroke](http://backstroke.us) (I'm a bot!)
+Created by [Backstroke](http://backstroke.co) (I'm a bot!)
 `.replace('\n', '');
 
 
