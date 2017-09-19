@@ -32,7 +32,7 @@ function getForksForRepo(user, args) {
   return new Promise((resolve, reject) => {
     github.repos.getForks(args, (err, res) => {
       if (err) {
-        reject(err);
+        reject(new Error(`Couldn't get forks for repository ${args.owner}${args.repo}: ${err.message ? err.message : err}`));
       } else {
         resolve(res.data);
       }
@@ -46,11 +46,11 @@ function didRepoOptOut(github, owner, repo) {
   return new Promise((resolve, reject) => {
     github.search.issues({
       q: `repo:${owner}/${repo} is:pr label:optout`,
-    }, (err, issues) => {
+    }, (err, issus) => {
       if (err && err.errors && err.errors.find(i => i.code === 'invalid')) {
         reject(new Error(`Repository ${owner}/${repo} doesn't exist.`));
       } else if (err) {
-        reject(err);
+        reject(new Error(`Couldn't search issues on repository ${owner}${repo}: ${err.message ? err.message : err}`));
       } else {
         resolve(issues.total_count > 0);
       }
@@ -109,7 +109,7 @@ async function createPullRequest(user, link, fork, debug, didRepoOptOut, githubP
           resolve(`There's already a pull request on ${link.forkOwner}/${link.forkRepo}`);
         } else if (err) {
           // Still reject anything else
-          reject(err);
+          reject(new Error(`Couldn't create pull request on repository ${link.forkOwner}/${link.forkRepo}: ${err.message ? err.message : err}`));
         } else {
           resolve(`Successfully created pull request on ${link.forkOwner}/${link.forkRepo}`);
         }

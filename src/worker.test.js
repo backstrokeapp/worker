@@ -410,7 +410,7 @@ describe('webhook worker', () => {
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
     assert.equal(response.status, 'ERROR');
-    assert.equal(response.output.error, `Unknown Error!`);
+    assert.equal(response.output.error, `Couldn't create pull request on repository rgaus/biome: Unknown Error!`);
   });
   it('should make a PR to a single fork of an upstream, but the link is disabled', async () => {
     const createPullRequest = require('./helpers').createPullRequest;
