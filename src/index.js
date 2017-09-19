@@ -15,15 +15,30 @@ const didRepoOptOut = require('./helpers').didRepoOptOut;
 const githubPullRequestsCreate = github => github.pullRequests.create
 
 const ONE_HOUR_IN_SECONDS = 60 * 60;
+const debug = require('debug')('backstroke:webhook-status-store');
 const WebhookStatusStore = {
-  set(webhookId, status, expiresIn=ONE_HOUR_IN_SECONDS) {
+  set(webhookId, status, expiresIn=24*ONE_HOUR_IN_SECONDS) {
     return new Promise((resolve, reject) => {
       redis.set(`webhook:status:${webhookId}`, JSON.stringify(status), 'EX', expiresIn, (err, id) => {
         if (err) {
           reject(err);
+
+          // FInally, increment the error metric
+          redis.incr(`webhook:stats:errors`, err => {
+            if (err) {
+              debug(`Error incrementing webhook webhook:stats:errors key: ${err}`);
+            }
+          });
         } else {
           // Resolves the message id.
           resolve(id);
+
+          // Finally, increment the success / error metrics
+          redis.incr(`webhook:stats:successes`, err => {
+            if (err) {
+              debug(`Error incrementing webhook webhook:stats:successes key: ${err}`);
+            }
+          });
         }
       });
     });

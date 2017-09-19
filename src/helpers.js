@@ -86,6 +86,7 @@ async function createPullRequest(user, link, fork, debug, didRepoOptOut, githubP
   }
 
   const didOptOut = await didRepoOptOut(github, fork.owner, fork.repo);
+
   // Do we have permission to make a pull request on the child?
   if (didOptOut) {
     debug(`Repo opted out of pull requests: ${fork.owner}/${fork.repo}`);
