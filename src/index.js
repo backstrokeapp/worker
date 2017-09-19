@@ -22,23 +22,26 @@ const WebhookStatusStore = {
       redis.set(`webhook:status:${webhookId}`, JSON.stringify(status), 'EX', expiresIn, (err, id) => {
         if (err) {
           reject(err);
-
-          // FInally, increment the error metric
-          redis.incr(`webhook:stats:errors`, err => {
-            if (err) {
-              debug(`Error incrementing webhook webhook:stats:errors key: ${err}`);
-            }
-          });
         } else {
           // Resolves the message id.
           resolve(id);
 
-          // Finally, increment the success / error metrics
-          redis.incr(`webhook:stats:successes`, err => {
-            if (err) {
-              debug(`Error incrementing webhook webhook:stats:successes key: ${err}`);
-            }
-          });
+          // Notate how the operation went
+          if (status.status === 'OK') {
+            // Finally, increment the success / error metrics
+            redis.incr(`webhook:stats:successes`, err => {
+              if (err) {
+                debug(`Error incrementing webhook webhook:stats:successes key: ${err}`);
+              }
+            });
+          } else {
+            // FInally, increment the error metric
+            redis.incr(`webhook:stats:errors`, err => {
+              if (err) {
+                debug(`Error incrementing webhook webhook:stats:errors key: ${err}`);
+              }
+            });
+          }
         }
       });
     });
