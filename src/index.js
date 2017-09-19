@@ -29,13 +29,15 @@ const WebhookStatusStore = {
           // Notate how the operation went
           if (status.status === 'OK') {
             // Finally, increment the success / error metrics
+            debug(`Incrementing webhook:stats:successes key...`);
             redis.incr(`webhook:stats:successes`, err => {
               if (err) {
                 debug(`Error incrementing webhook webhook:stats:successes key: ${err}`);
               }
             });
-          } else {
-            // FInally, increment the error metric
+          } else if (status.status === 'ERROR') {
+            // Finally, increment the error metric
+            debug(`Incrementing webhook:stats:errors key...`);
             redis.incr(`webhook:stats:errors`, err => {
               if (err) {
                 debug(`Error incrementing webhook webhook:stats:errors key: ${err}`);
