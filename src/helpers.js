@@ -46,7 +46,7 @@ function didRepoOptOut(github, owner, repo) {
   return new Promise((resolve, reject) => {
     github.search.issues({
       q: `repo:${owner}/${repo} is:pr label:optout`,
-    }, (err, issus) => {
+    }, (err, issues) => {
       if (err && err.errors && err.errors.find(i => i.code === 'invalid')) {
         reject(new Error(`Repository ${owner}/${repo} doesn't exist.`));
       } else if (err) {
