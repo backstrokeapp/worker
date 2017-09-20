@@ -556,4 +556,74 @@ describe('webhook worker', () => {
     assert.equal(response.status, 'ERROR');
     assert.equal(response.output.error, 'Please define both an upstream and fork on this link.');
   });
+  it(`should make a PR to a single fork of an upstream, but fork is a repository that doesn't exist`, async () => {
+    const createPullRequest = sinon.stub().yields([null]);
+    const getForksForRepo = sinon.stub().resolves([{
+      owner: {login: 'foo'},
+      name: 'bar',
+    }]);
+    const didRepoOptOut = sinon.stub().rejects(new Error(`Repository foo/bar doesn't exist!`));
+
+    const enqueuedAs = await MockWebhookQueue.push({
+      type: 'MANUAL',
+      user: {
+        id: 1,
+        username: '1egoman',
+        email: null,
+        githubId: '1704236',
+        accessToken: 'ACCESS TOKEN',
+        publicScope: false,
+        createdAt: '2017-08-09T12:00:36.000Z',
+        lastLoggedInAt: '2017-08-16T12:50:40.203Z',
+        updatedAt: '2017-08-16T12:50:40.204Z',
+      },
+      link: {
+        id: 8,
+        name: 'My Link',
+        enabled: true,
+        webhookId: '37948270678a440a97db01ebe71ddda2',
+        lastSyncedAt: '2017-08-17T11:37:22.999Z',
+        upstreamType: 'repo',
+        upstreamOwner: '1egoman',
+        upstreamRepo: 'backstroke',
+        upstreamIsFork: null,
+        upstreamBranches: '["inject","master"]',
+        upstreamBranch: 'master',
+        forkType: 'repo',
+        forkOwner: 'rgaus',
+        forkRepo: 'backstroke',
+        forkBranches: '["master"]',
+        forkBranch: 'master',
+        createdAt: '2017-08-11T10:17:09.614Z',
+        updatedAt: '2017-08-17T11:37:23.001Z',
+        ownerId: 1,
+        owner: {
+          id: 1,
+          username: '1egoman',
+          email: null,
+          githubId: '1704236',
+          accessToken: 'ACCESS TOKEN',
+          publicScope: false,
+          createdAt: '2017-08-09T12:00:36.000Z',
+          lastLoggedInAt: '2017-08-16T12:50:40.203Z',
+          updatedAt: '2017-08-16T12:50:40.204Z',
+        }
+      },
+    });
+
+    // Run the worker that eats off the queue.
+    await processBatch(
+      MockWebhookQueue,
+      MockWebhookStatusStore,
+      () => null, // console.log.bind(console, '* '),
+      getForksForRepo,
+      require('./helpers').createPullRequest,
+      didRepoOptOut
+    );
+
+    // Make sure that it worked
+    const response = MockWebhookStatusStore.keys[enqueuedAs].status;
+    assert.equal(response.status, 'ERROR');
+    assert.equal(response.output.error, `Repository foo/bar doesn't exist!`);
+  });
 });
