@@ -8,11 +8,11 @@ const redisQueue = new RedisMQ({client: redis, ns: 'rsmq'});
 const processBatch = require('./worker');
 const getForksForRepo = require('./helpers').getForksForRepo;
 
-const mockCreatePullRequest = async (...args) => console.log('  *', require('chalk').green('MOCK CREATE PR'), args);
 const createPullRequest = require('./helpers').createPullRequest;
 const didRepoOptOut = require('./helpers').didRepoOptOut;
 
 const githubPullRequestsCreate = github => github.pullRequests.create
+const mockGithubPullRequestsCreate = async (...args) => console.log('  *', require('chalk').green('MOCK CREATE PR'), args);
 
 const ONE_HOUR_IN_SECONDS = 60 * 60;
 const debug = require('debug')('backstroke:webhook-status-store');
@@ -128,9 +128,10 @@ if (require.main === module) {
       WebhookStatusStore,
       logger,
       getForksForRepo,
-      {default: createPullRequest, mock: mockCreatePullRequest}[args.pr || 'default'],
+      createPullRequest,
       didRepoOptOut,
       githubPullRequestsCreate
+      {default: githubPullRequestsCreate, mock: mockgithubPullRequestsCreate}[args.pr || 'default'],
     ).then(() => {
       console.log('* Success!');
       done();
