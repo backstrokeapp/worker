@@ -32,7 +32,7 @@ function getForksForRepo(user, args) {
   return new Promise((resolve, reject) => {
     github.repos.getForks(args, (err, res) => {
       if (err) {
-        reject(new Error(`Couldn't get forks for repository ${args.owner}${args.repo}: ${err.message ? err.message : err}`));
+        reject(new Error(`Couldn't get forks for repository ${args.owner}/${args.repo}: ${err.message ? err.message : err}`));
       } else {
         resolve(res.data);
       }
@@ -50,7 +50,7 @@ function didRepoOptOut(github, owner, repo) {
       if (err && err.errors && err.errors.find(i => i.code === 'invalid')) {
         reject(new Error(`Repository ${owner}/${repo} doesn't exist.`));
       } else if (err) {
-        reject(new Error(`Couldn't search issues on repository ${owner}${repo}: ${err.message ? err.message : err}`));
+        reject(new Error(`Couldn't search issues on repository ${owner}/${repo}: ${err.message ? err.message : err}`));
       } else {
         resolve(issues.total_count > 0);
       }
