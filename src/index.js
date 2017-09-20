@@ -130,8 +130,8 @@ if (require.main === module) {
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      githubPullRequestsCreate
-      {default: githubPullRequestsCreate, mock: mockgithubPullRequestsCreate}[args.pr || 'default'],
+      githubPullRequestsCreate,
+      {default: githubPullRequestsCreate, mock: mockGithubPullRequestsCreate}[args.pr || 'default']
     ).then(() => {
       console.log('* Success!');
       done();
