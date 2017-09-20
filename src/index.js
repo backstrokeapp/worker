@@ -12,7 +12,6 @@ const createPullRequest = require('./helpers').createPullRequest;
 const didRepoOptOut = require('./helpers').didRepoOptOut;
 
 const githubPullRequestsCreate = github => github.pullRequests.create
-const mockGithubPullRequestsCreate = async (...args) => console.log('  *', require('chalk').green('MOCK CREATE PR'), args);
 
 const ONE_HOUR_IN_SECONDS = 60 * 60;
 const debug = require('debug')('backstroke:webhook-status-store');
@@ -116,6 +115,13 @@ function logger() {
 
 
 if (require.main === module) {
+  let rawPullRequestCreate = githubPullRequestsCreate;
+  if (process.env.PR === 'mock' || args.pr === 'mock') {
+    console.log('* Using pull request mock...');
+    rawPullRequestCreate = () => async (...args) =>
+      console.log('  *', require('chalk').green('MOCK CREATE PR'), args);
+  }
+
   // Called once the process finishes.
   function final() {
     redis.quit();
@@ -130,8 +136,7 @@ if (require.main === module) {
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      githubPullRequestsCreate,
-      {default: githubPullRequestsCreate, mock: mockGithubPullRequestsCreate}[args.pr || 'default']
+      rawPullRequestCreate
     ).then(() => {
       console.log('* Success!');
       done();
