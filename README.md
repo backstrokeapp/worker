@@ -29,6 +29,11 @@ GITHUB_TOKEN=XXX REDIS_URL=redis://XXX yarn start
 - `REDIS_URL`: A url to a redis instance with a rsmq queue inside. Takes the form of
   `redis://user:password@host:port`.
 
+## Arguments
+- `--pr mock`: Tell the worker not to actually make pull requests, but only log out when it is about
+  to make a pull request. This is handy for repeated testing or for testing against repositories
+  that you don't own.
+
 ## Running tests
   ```
 yarn test
