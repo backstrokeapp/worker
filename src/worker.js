@@ -142,7 +142,7 @@ module.exports = async function processBatch(
         startedAt,
         finishedAt: (new Date()).toISOString(),
         output: {error: error.message, stack: error.stack},
-        link,
+        link: Object.assign({}, link, {user: undefined}),
       });
     }
   }
