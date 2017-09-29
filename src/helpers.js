@@ -40,6 +40,24 @@ function getForksForRepo(user, args) {
   });
 }
 
+// Return the smallest number of api calls required to exhaust the rate limit.
+function checkRateLimit(user) {
+  const github = new GitHubApi({});
+  github.authenticate({type: "oauth", token: user.accessToken});
+
+  return new Promise((resolve, reject) => {
+    github.misc.getRateLimit({}, (err, res) => {
+      if (err) {
+        reject(new Error(`Couldn't fetch token rate limit: ${err.message ? err.message : err}`));
+      } else {
+        const coreRemaining = res.resources.core.remaining;
+        const searchRemaining = res.resources.search.remaining;
+        resolve(Math.min(coreRemaining, searchRemaining));
+      }
+    });
+  });
+}
+
 // Given a repository `user/repo` and a provider that the repo is located on (ex: `github`),
 // determine if the repo opted out.
 function didRepoOptOut(github, owner, repo) {

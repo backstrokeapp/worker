@@ -10,6 +10,7 @@ const getForksForRepo = require('./helpers').getForksForRepo;
 
 const createPullRequest = require('./helpers').createPullRequest;
 const didRepoOptOut = require('./helpers').didRepoOptOut;
+const checkRateLimit = require('./helpers').checkRateLimit;
 
 const githubPullRequestsCreate = github => github.pullRequests.create
 
@@ -140,7 +141,8 @@ if (require.main === module) {
       createPullRequest,
       didRepoOptOut,
       rawPullRequestCreate,
-      throttleBatch
+      throttleBatch,
+      checkRateLimit
     ).then(() => {
       console.log('* Success!');
       done();

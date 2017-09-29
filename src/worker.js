@@ -12,11 +12,20 @@ async function processFromQueue(
   createPullRequest,
   didRepoOptOut,
   githubPullRequestsCreate,
-  throttleBatch=0
+  throttleBatch=0,
+  checkRateLimit=false
 ) {
   // Provide a mechanism to throttle queue operations so that rate limits won't expire.
   if (throttleBatch > 0) {
     await (new Promise(resolve => setTimeout(resolve, throttleBatch)));
+  }
+
+  // Verify that we have api calls available to process items
+  if (checkRateLimit) {
+    while ((await checkRateLimit(user)) === 0) {
+      debug('Waiting for token rate limit to not be exhausted...');
+      await (new Promise(resolve => setTimeout(resolve, 1000)));
+    }
   }
 
   // if disabled, or upstream/fork is null, return so
@@ -93,7 +102,8 @@ module.exports = async function processBatch(
   createPullRequest,
   didRepoOptOut,
   githubPullRequestsCreate,
-  throttleBatch=0
+  throttleBatch=0,
+  checkRateLimit=false
 ) {
   while (true) {
     // Fetch a new webhook event.
@@ -131,7 +141,8 @@ module.exports = async function processBatch(
         createPullRequest,
         didRepoOptOut,
         githubPullRequestsCreate,
-        throttleBatch
+        throttleBatch,
+        checkRateLimit
       );
       debug('Result:', output);
 
