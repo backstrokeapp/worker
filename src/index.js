@@ -37,7 +37,7 @@ const WebhookStatusStore = {
             });
           } else if (status.status === 'ERROR') {
             // Finally, increment the error metric
-            debug(`Incrementing webhook:stats:errors key...`);
+            debug(`Incrementing webhook:stats:errors key... => ${JSON.stringify(status)}`);
             redis.incr(`webhook:stats:errors`, err => {
               if (err) {
                 debug(`Error incrementing webhook webhook:stats:errors key: ${err}`);
@@ -119,8 +119,10 @@ if (require.main === module) {
   let rawPullRequestCreate = githubPullRequestsCreate;
   if (process.env.PR === 'mock' || args.pr === 'mock') {
     console.log('* Using pull request mock...');
-    rawPullRequestCreate = () => async (...args) =>
+    rawPullRequestCreate = () => (args, cb) => {
       console.log('  *', require('chalk').green('MOCK CREATE PR'), args);
+      cb(null);
+    }
   }
 
   // Provide a mechanism to throttle the time between handling webhooks

@@ -43,15 +43,15 @@ function getForksForRepo(user, args) {
 // Return the smallest number of api calls required to exhaust the rate limit.
 function checkRateLimit(user) {
   const github = new GitHubApi({});
-  github.authenticate({type: "oauth", token: user.accessToken});
+  github.authenticate({type: "oauth", token: process.env.GITHUB_TOKEN});
 
   return new Promise((resolve, reject) => {
     github.misc.getRateLimit({}, (err, res) => {
       if (err) {
         reject(new Error(`Couldn't fetch token rate limit: ${err.message ? err.message : err}`));
       } else {
-        const coreRemaining = res.resources.core.remaining;
-        const searchRemaining = res.resources.search.remaining;
+        const coreRemaining = res.data.resources.core.remaining;
+        const searchRemaining = res.data.resources.search.remaining;
         resolve(Math.min(coreRemaining, searchRemaining));
       }
     });
@@ -141,4 +141,5 @@ module.exports = {
   getForksForRepo,
   createPullRequest,
   didRepoOptOut,
+  checkRateLimit,
 };

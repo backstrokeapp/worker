@@ -22,9 +22,15 @@ async function processFromQueue(
 
   // Verify that we have api calls available to process items
   if (checkRateLimit) {
-    while ((await checkRateLimit(user)) === 0) {
-      debug('Waiting for token rate limit to not be exhausted...');
-      await (new Promise(resolve => setTimeout(resolve, 1000)));
+    while (true) {
+      const rateLimit = await checkRateLimit(user);
+      if (rateLimit === 0) {
+        debug('Waiting for token rate limit to not be exhausted...');
+        await (new Promise(resolve => setTimeout(resolve, 1000)));
+      } else {
+        debug('Token rate limit not exhausted - rate limit at', rateLimit);
+        break;
+      }
     }
   }
 
