@@ -122,6 +122,9 @@ if (require.main === module) {
       console.log('  *', require('chalk').green('MOCK CREATE PR'), args);
   }
 
+  // Provide a mechanism to throttle the time between handling webhooks
+  const throttleBatch = process.env.THROTTLE ? parseInt(process.env.THROTTLE, 10) : 0;
+
   // Called once the process finishes.
   function final() {
     redis.quit();
@@ -136,7 +139,8 @@ if (require.main === module) {
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      rawPullRequestCreate
+      rawPullRequestCreate,
+      throttleBatch
     ).then(() => {
       console.log('* Success!');
       done();

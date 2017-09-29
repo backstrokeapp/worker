@@ -28,6 +28,8 @@ GITHUB_TOKEN=XXX REDIS_URL=redis://XXX yarn start
   is a token for [backstroke-bot](https://github.com/backstroke-bot).
 - `REDIS_URL`: A url to a redis instance with a rsmq queue inside. Takes the form of
   `redis://user:password@host:port`.
+- `THROTTLE`: Provide an optional delay between handling each webhook operation. This is
+  potentially handy to keep a worker from exhausing the rate limit on a token.
 
 ## Arguments
 - `--pr mock`: Tell the worker not to actually make pull requests, but only log out when it is about

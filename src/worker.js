@@ -11,8 +11,14 @@ async function processFromQueue(
   getForksForRepo,
   createPullRequest,
   didRepoOptOut,
-  githubPullRequestsCreate
+  githubPullRequestsCreate,
+  throttleBatch=0
 ) {
+  // Provide a mechanism to throttle queue operations so that rate limits won't expire.
+  if (throttleBatch > 0) {
+    await (new Promise(resolve => setTimeout(resolve, throttleBatch)));
+  }
+
   // if disabled, or upstream/fork is null, return so
   if (!link.enabled) {
     throw new Error('Link is not enabled.');
@@ -86,7 +92,8 @@ module.exports = async function processBatch(
   getForksForRepo,
   createPullRequest,
   didRepoOptOut,
-  githubPullRequestsCreate
+  githubPullRequestsCreate,
+  throttleBatch=0
 ) {
   while (true) {
     // Fetch a new webhook event.
@@ -123,7 +130,8 @@ module.exports = async function processBatch(
         getForksForRepo,
         createPullRequest,
         didRepoOptOut,
-        githubPullRequestsCreate
+        githubPullRequestsCreate,
+        throttleBatch
       );
       debug('Result:', output);
 
