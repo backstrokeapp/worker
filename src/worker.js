@@ -1,5 +1,23 @@
 const paginateRequest = require('./helpers').paginateRequest;
 
+// An async fnction that returns a promise that resolves once there is at least one call left in the
+// token rate limit.
+async function didNotGoOverRateLimit(user, debug, checkRateLimit) {
+  // Verify that we have api calls available to process items
+  if (checkRateLimit) {
+    while (true) {
+      const rateLimit = await checkRateLimit(user);
+      if (rateLimit === 0) {
+        debug('Waiting for token rate limit to not be exhausted...');
+        await (new Promise(resolve => setTimeout(resolve, 1000)));
+      } else {
+        debug('Token rate limit not exhausted - rate limit at', rateLimit);
+        break;
+      }
+    }
+  }
+}
+
 const OK = 'OK',
       RUNNING = 'RUNNING',
       ERROR = 'ERROR';
@@ -20,20 +38,6 @@ async function processFromQueue(
     await (new Promise(resolve => setTimeout(resolve, throttleBatch)));
   }
 
-  // Verify that we have api calls available to process items
-  if (checkRateLimit) {
-    while (true) {
-      const rateLimit = await checkRateLimit(user);
-      if (rateLimit === 0) {
-        debug('Waiting for token rate limit to not be exhausted...');
-        await (new Promise(resolve => setTimeout(resolve, 1000)));
-      } else {
-        debug('Token rate limit not exhausted - rate limit at', rateLimit);
-        break;
-      }
-    }
-  }
-
   // if disabled, or upstream/fork is null, return so
   if (!link.enabled) {
     throw new Error('Link is not enabled.');
@@ -44,6 +48,10 @@ async function processFromQueue(
   // Step 1: are we dealing with a repo to merge into or all the forks of a repo?
   if (link.forkType === 'repo') {
     debug('Webhook is on the fork. Making a pull request to the single fork repository.');
+
+    // Ensure we didn't go over the token rate limit prior to making the pull request.
+    await didNotGoOverRateLimit(user, debug, checkRateLimit);
+
     const response = await createPullRequest(
       user,
       link,
@@ -73,6 +81,9 @@ async function processFromQueue(
 
     debug('Found %d forks of the upstream.', forks.length);
     const all = forks.map(async fork => {
+      // Ensure we didn't go over the token rate limit prior to making the pull request.
+      await didNotGoOverRateLimit(user, debug, checkRateLimit);
+
       return createPullRequest(
         user,
         link,
