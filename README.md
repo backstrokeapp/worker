@@ -24,9 +24,9 @@ GITHUB_TOKEN=XXX REDIS_URL=redis://XXX yarn start
 ```
 
 ### Environment variables
-- `GITHUB_TOKEN`: The Github token for the user that creates pull requests. When deployed, this
-  is a token for [backstroke-bot](https://github.com/backstroke-bot).
-- `REDIS_URL`: A url to a redis instance with a rsmq queue inside. Takes the form of
+- `GITHUB_TOKEN` (required): The Github token for the user that creates pull requests. When
+  deployed, this is a token for [backstroke-bot](https://github.com/backstroke-bot).
+- `REDIS_URL` (required): A url to a redis instance with a rsmq queue inside. Takes the form of
   `redis://user:password@host:port`.
 - `THROTTLE`: Provide an optional delay between handling each webhook operation. This is
   potentially handy to keep a worker from exhausing the rate limit on a token.
@@ -34,7 +34,7 @@ GITHUB_TOKEN=XXX REDIS_URL=redis://XXX yarn start
 ## Arguments
 - `--pr mock`: Tell the worker not to actually make pull requests, but only log out when it is about
   to make a pull request. This is handy for repeated testing or for testing against repositories
-  that you don't own.
+  that you don't own. This option is off by default.
 
 ## Running tests
   ```
