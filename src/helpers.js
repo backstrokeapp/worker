@@ -26,7 +26,7 @@ function paginateRequest(method, args, pageSize=100, page=0, cumulativeData=[]) 
 }
 
 function getForksForRepo(user, args) {
-  const github = new GitHubApi({});
+  const github = new GitHubApi({timeout: 5000});
   github.authenticate({type: "oauth", token: user.accessToken});
 
   return new Promise((resolve, reject) => {
@@ -42,7 +42,7 @@ function getForksForRepo(user, args) {
 
 // Return the smallest number of api calls required to exhaust the rate limit.
 function checkRateLimit() {
-  const github = new GitHubApi({});
+  const github = new GitHubApi({timeout: 5000});
   github.authenticate({type: "oauth", token: process.env.GITHUB_TOKEN});
 
   return new Promise((resolve, reject) => {
@@ -92,7 +92,7 @@ Created by [Backstroke](http://backstroke.co) (I'm a bot!)
 
 
 async function createPullRequest(user, link, fork, debug, didRepoOptOut, githubPullRequestsCreate) {
-  const github = new GitHubApi({});
+  const github = new GitHubApi({timeout: 5000});
   if (!process.env.GITHUB_TOKEN) {
     if (process.env.NODE_ENV !== 'test') {
       debug('No GITHUB_TOKEN was set - please set the machine user token env variable.');
