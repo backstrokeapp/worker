@@ -2,13 +2,13 @@ const paginateRequest = require('./helpers').paginateRequest;
 
 // An async fnction that returns a promise that resolves once there is at least one call left in the
 // token rate limit.
-async function didNotGoOverRateLimit(user, debug, checkRateLimit) {
+async function didNotGoOverRateLimit(debug, checkRateLimit) {
   // Verify that we have api calls available to process items
   if (checkRateLimit) {
     while (true) {
-      const rateLimit = await checkRateLimit(user);
+      const rateLimit = await checkRateLimit();
       if (rateLimit === 0) {
-        debug('Waiting for token rate limit to not be exhausted...');
+        debug('Waiting for token rate limit to reset...');
         await (new Promise(resolve => setTimeout(resolve, 1000)));
       } else {
         debug('Token rate limit not exhausted - rate limit at', rateLimit);
@@ -50,7 +50,7 @@ async function processFromQueue(
     debug('Webhook is on the fork. Making a pull request to the single fork repository.');
 
     // Ensure we didn't go over the token rate limit prior to making the pull request.
-    await didNotGoOverRateLimit(user, debug, checkRateLimit);
+    await didNotGoOverRateLimit(debug, checkRateLimit);
 
     const response = await createPullRequest(
       user,
@@ -79,10 +79,10 @@ async function processFromQueue(
       repo: link.upstreamRepo,
     }]);
 
-    debug('Found %d forks of the upstream.', forks.length);
+    debug(`Found ${forks.length} forks of the upstream.`);
     const all = forks.map(async fork => {
       // Ensure we didn't go over the token rate limit prior to making the pull request.
-      await didNotGoOverRateLimit(user, debug, checkRateLimit);
+      await didNotGoOverRateLimit(debug, checkRateLimit);
 
       return createPullRequest(
         user,
@@ -123,6 +123,9 @@ module.exports = async function processBatch(
   checkRateLimit=false
 ) {
   while (true) {
+    // Ensure we didn't go over the token rate limit prior to handling another link.
+    await didNotGoOverRateLimit(debug, checkRateLimit);
+
     // Fetch a new webhook event.
     const webhook = await WebhookQueue.pop();
     // The queue is empty? Cool, we're done.

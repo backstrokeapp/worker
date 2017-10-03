@@ -146,7 +146,6 @@ if (require.main === module) {
       throttleBatch,
       checkRateLimit
     ).then(() => {
-      console.log('* Success!');
       done();
     }).catch(err => {
       console.error('Error:');
@@ -158,6 +157,12 @@ if (require.main === module) {
   if (args.once) {
     go(final);
   } else {
-    setInterval(go.bind(null, a => a), process.env.WORKER_POLL_INTERVAL || 5000);
+    // Run the webhook worker, then once it's complete, wait 5 seconds and run it again, ad
+    // infinitum
+    const interval = process.env.WORKER_POLL_INTERVAL || 5000;
+    function iteration() {
+      go(() => setTimeout(iteration, interval));
+    }
+    setTimeout(iteration, interval);
   }
 }

@@ -41,7 +41,7 @@ function getForksForRepo(user, args) {
 }
 
 // Return the smallest number of api calls required to exhaust the rate limit.
-function checkRateLimit(user) {
+function checkRateLimit() {
   const github = new GitHubApi({});
   github.authenticate({type: "oauth", token: process.env.GITHUB_TOKEN});
 
@@ -50,9 +50,7 @@ function checkRateLimit(user) {
       if (err) {
         reject(new Error(`Couldn't fetch token rate limit: ${err.message ? err.message : err}`));
       } else {
-        const coreRemaining = res.data.resources.core.remaining;
-        const searchRemaining = res.data.resources.search.remaining;
-        resolve(Math.min(coreRemaining, searchRemaining));
+        resolve(res.data.resources.core.remaining);
       }
     });
   });
@@ -62,15 +60,17 @@ function checkRateLimit(user) {
 // determine if the repo opted out.
 function didRepoOptOut(github, owner, repo) {
   return new Promise((resolve, reject) => {
-    github.search.issues({
-      q: `repo:${owner}/${repo} is:pr label:optout`,
+    github.issues.getForRepo({
+      owner, repo,
+      labels: 'optout',
+      per_page: 1,
     }, (err, issues) => {
       if (err && err.errors && err.errors.find(i => i.code === 'invalid')) {
         reject(new Error(`Repository ${owner}/${repo} doesn't exist.`));
       } else if (err) {
         reject(new Error(`Couldn't search issues on repository ${owner}/${repo}: ${err.message ? err.message : err}`));
       } else {
-        resolve(issues.total_count > 0);
+        resolve(issues.data.length > 0);
       }
     });
   });
