@@ -1,4 +1,6 @@
 const paginateRequest = require('./helpers').paginateRequest;
+const hostname = require('os').hostname;
+const crypto = require('crypto');
 
 // An async fnction that returns a promise that resolves once there is at least one call left in the
 // token rate limit.
@@ -173,6 +175,7 @@ module.exports = async function processBatch(
         finishedAt: (new Date()).toISOString(),
         output,
         link,
+        handledBy: crypto.createHash('sha256').update(hostname).digest('base64'),
       });
     } catch (error) {
       // Error! Update redis to say so.
