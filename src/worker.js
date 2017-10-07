@@ -175,7 +175,7 @@ module.exports = async function processBatch(
         finishedAt: (new Date()).toISOString(),
         output,
         link,
-        handledBy: crypto.createHash('sha256').update(hostname).digest('base64'),
+        handledBy: crypto.createHash('sha256').update(hostname()).digest('base64'),
       });
     } catch (error) {
       // Error! Update redis to say so.
