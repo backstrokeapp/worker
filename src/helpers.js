@@ -58,8 +58,12 @@ function checkRateLimit() {
 
 // Given a repository `user/repo` and a provider that the repo is located on (ex: `github`),
 // determine if the repo opted out.
-function didRepoOptOut(github, owner, repo) {
+function didRepoOptOut(github, user, owner, repo) {
   return new Promise((resolve, reject) => {
+    // Use the link owner's token when making the request
+    github.authenticate({type: "oauth", token: user.accessToken});
+
+    // Make request.
     github.issues.getForRepo({
       owner, repo,
       labels: 'optout',
@@ -103,7 +107,7 @@ async function createPullRequest(user, link, fork, debug, didRepoOptOut, githubP
     github.authenticate({type: "oauth", token: process.env.GITHUB_TOKEN});
   }
 
-  const didOptOut = await didRepoOptOut(github, fork.owner, fork.repo);
+  const didOptOut = await didRepoOptOut(github, user, fork.owner, fork.repo);
 
   // Do we have permission to make a pull request on the child?
   if (didOptOut) {
