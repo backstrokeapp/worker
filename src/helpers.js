@@ -80,6 +80,31 @@ function didRepoOptOut(github, user, owner, repo) {
   });
 }
 
+// Add the backstroke bot user as a collaorabor on the given repository.
+async function addBackstrokeBotAsCollaborator(github, owner, repo) {
+  return new Promise((resolve, reject) => {
+    // Use the link owner's token when making the request
+    github.authenticate({type: "oauth", token: user.accessToken});
+
+    // Make request.
+    const username = process.env.GITHUB_BOT_USERNAME || 'backstroke-bot';
+    github.repos.addCollaborator({
+      owner,
+      repo,
+      username,
+      permission: 'pull',
+    }, err => {
+      if (err && err.errors && err.errors.find(i => i.code === 'invalid')) {
+        reject(new Error(`Repository ${owner}/${repo} doesn't exist.`));
+      } else if (err) {
+        reject(new Error(`Couldn't make the ${username} bot user a collaborator on ${owner}/${repo}: ${err.message ? err.message : err}`));
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
 const generatePullRequestTitle = (user, repo, branch) => `Update from upstream repo ${user}/${repo}@${branch}`;
 const generatePullRequestBody = (user, repo, branch) => `Hello!\n
 The remote \`${user}/${repo}@${branch}\` has some new changes that aren't in this fork.
@@ -114,6 +139,13 @@ async function createPullRequest(user, link, fork, debug, didRepoOptOut, githubP
     debug(`Repo opted out of pull requests: ${fork.owner}/${fork.repo}`);
     throw new Error('This repo opted out of backstroke pull requests');
   } else {
+    // Add backstroke bot user as a collaborator if the repository is private.
+    if (fork.private) {
+      const username = process.env.GITHUB_BOT_USERNAME || 'backstroke-bot';
+      debug(`Fork ${fork.owner}/${fork.repo} is private, adding ${username} as a collaborator before proposing changes...`);
+      await addBackstrokeBotAsCollaborator(github, fork.owner, fork.repo);
+    }
+
     // Create a new pull request from the upstream to the child.
     return new Promise((resolve, reject) => {
       return githubPullRequestsCreate(github)({
