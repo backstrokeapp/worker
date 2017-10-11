@@ -159,13 +159,13 @@ async function createPullRequest(user, link, fork, debug, didRepoOptOut, githubP
       }, err => {
         if (err && err.code === 422) {
           // The pull request already existed
-          debug(`Already a pull request on ${link.forkOwner}/${link.forkRepo} from ${link.upstreamOwner}/${link.upstreamRepo}`);
+          debug(`Already a pull request on ${fork.owner}/${fork.repo} from ${link.upstreamOwner}/${link.upstreamRepo}`);
           resolve(`There's already a pull request on ${link.forkOwner}/${link.forkRepo}`);
         } else if (err) {
           // Still reject anything else
-          reject(new Error(`Couldn't create pull request on repository ${link.forkOwner}/${link.forkRepo}: ${err.message ? err.message : err}`));
+          reject(new Error(`Couldn't create pull request on repository ${fork.owner}/${fork.repo}: ${err.message ? err.message : err}`));
         } else {
-          resolve(`Successfully created pull request on ${link.forkOwner}/${link.forkRepo}`);
+          resolve(`Successfully created pull request on ${fork.owner}/${fork.repo}`);
         }
       });
     });
