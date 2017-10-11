@@ -86,24 +86,33 @@ async function processFromQueue(
       // Ensure we didn't go over the token rate limit prior to making the pull request.
       await didNotGoOverRateLimit(debug, checkRateLimit);
 
-      return createPullRequest(
-        user,
-        link,
-        {
-          owner: fork.owner.login,
-          repo: fork.name,
-          branch: link.forkBranch,
-        },
-        debug,
-        didRepoOptOut,
-        githubPullRequestsCreate
-      );
+      try {
+        const data = await createPullRequest(
+          user,
+          link,
+          {
+            owner: fork.owner.login,
+            repo: fork.name,
+            branch: link.forkBranch,
+          },
+          debug,
+          didRepoOptOut,
+          githubPullRequestsCreate
+        );
+        return {status: 'OK', data};
+      } catch (error) {
+        return {status: 'ERROR', error: error.message};
+      }
     });
 
     const data = await Promise.all(all);
     return {
       many: true,
-      forkCount: data.length, // total amount of forks handled
+      metrics: {
+        total: data.length,
+        successes: data.filter(i => i.status === 'OK').length,
+      },
+      errors: data.filter(i => i.status === 'ERROR'),
       isEnabled: true,
     };
   } else {
