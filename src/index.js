@@ -11,6 +11,11 @@ const getForksForRepo = require('./helpers').getForksForRepo;
 const createPullRequest = require('./helpers').createPullRequest;
 const didRepoOptOut = require('./helpers').didRepoOptOut;
 const checkRateLimit = require('./helpers').checkRateLimit;
+const addBackstrokeBotAsCollaborator = require('./helpers').addBackstrokeBotAsCollaborator;
+const forkRepository = require('./helpers').forkRepository;
+
+const tmp = require('tmp-promise');
+const nodegit = require('nodegit');
 
 const githubPullRequestsCreate = github => github.pullRequests.create
 
@@ -143,6 +148,10 @@ if (require.main === module) {
       createPullRequest,
       didRepoOptOut,
       rawPullRequestCreate,
+      nodegit,
+      tmp,
+      addBackstrokeBotAsCollaborator,
+      forkRepository,
       throttleBatch,
       checkRateLimit
     ).then(() => {

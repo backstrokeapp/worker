@@ -32,6 +32,10 @@ async function processFromQueue(
   createPullRequest,
   didRepoOptOut,
   githubPullRequestsCreate,
+  nodegit,
+  tmp,
+  addBackstrokeBotAsCollaborator,
+  forkRepository,
   throttleBatch=0,
   checkRateLimit=false
 ) {
@@ -115,6 +119,88 @@ async function processFromQueue(
       errors: data.filter(i => i.status === 'ERROR'),
       isEnabled: true,
     };
+  } else if (link.forkType === 'unrelated-repo') {
+    // Backstroke-bot forks our fork.
+    const GitHubApi = require('github');
+    const github = new GitHubApi({timeout: 5000});
+    github.authenticate({type: "oauth", token: process.env.GITHUB_TOKEN});
+
+    const tempForkOwner = process.env.GITHUB_BOT_USERNAME || 'backstroke-bot';
+    const tempForkRepo = link.forkRepo;
+    // Later, use a branch on the temp fork named after the user the fork was forked from.
+    const tempForkBranch = link.forkOwner;
+
+    // Fork our repository
+    debug(`Forking ${link.forkOwner}/${link.forkRepo} to ${tempForkOwner}/${tempForkRepo}`);
+    await forkRepository(github, link.forkOwner, link.forkRepo)
+
+    // Clone down the upstream
+    const tempForkDirectory = await tmp.dir({unsafeCleanup: true});
+    debug(`Cloning ${link.upstreamOwner}/${link.upstreamRepo} into local path ${tempForkDirectory.path}`);
+    const tempFork = await nodegit.Clone(
+      `https://github.com/${link.upstreamOwner}/${link.upstreamRepo}`,
+      tempForkDirectory.path,
+      {
+        fetchOpts: {
+          callbacks: {
+            certificateCheck: function() { return 1; },
+            credentials: function(url, userName) {
+              return NodeGit.Cred.userpassPlaintextNew(process.env.GITHUB_TOKEN, "x-oauth-basic");
+            },
+          },
+        },
+      }
+    );
+
+    // Force push the upstream to the temp fork
+    debug(`Pushing local path ${tempForkDirectory.path} to ${tempForkOwner}/${tempForkRepo}@${tempForkBranch}`);
+    const tempForkRemote = await nodegit.Remote.createAnonymous(
+      tempFork,
+      `https://github.com/${tempForkOwner}/${tempForkRepo}`
+    );
+    const pushError = await tempForkRemote.push([`+HEAD:refs/heads/${tempForkBranch}`], {
+      callbacks: {
+        credentials(url, userName) {
+          return nodegit.Cred.userpassPlaintextNew(process.env.GITHUB_TOKEN, "x-oauth-basic");
+        },
+      },
+    });
+
+    // Ensure pushing didn't return an error.
+    if (pushError) {
+      throw new Error(`Error received while pushing ${tempForkOwner}/${tempForkBranch}: ${pushError}`);
+    }
+
+    // Remove temp fork from disk
+    tempForkDirectory.cleanup();
+    debug(`Cleaned up ${tempForkDirectory.path}`);
+
+    // At this point, the temporary fork mirrors the upstream, but since the temporary fork is
+    // related to the actual fork, create a pull request using it instead of the upstream.
+    const response = await createPullRequest(
+      user,
+      Object.assign({}, link, {
+        upstreamOwner: tempForkOwner,
+        upstreamRepo: tempForkRepo,
+        upstreamBranch: link.forkOwner,
+      }),
+      {
+        owner: link.forkOwner,
+        repo: link.forkRepo,
+        branch: link.forkBranch,
+      },
+      debug,
+      didRepoOptOut,
+      githubPullRequestsCreate
+    );
+
+    return {
+      isEnabled: true,
+      many: false,
+      unrelatedForks: true,
+      forkCount: 1, // just one repo
+      response,
+    };
   } else {
     throw new Error(`No such 'fork' type: ${link.forkType}`);
   }
@@ -130,6 +216,10 @@ module.exports = async function processBatch(
   createPullRequest,
   didRepoOptOut,
   githubPullRequestsCreate,
+  nodegit,
+  tmp,
+  addBackstrokeBotAsCollaborator,
+  forkRepository,
   throttleBatch=0,
   checkRateLimit=false
 ) {
@@ -172,6 +262,10 @@ module.exports = async function processBatch(
         createPullRequest,
         didRepoOptOut,
         githubPullRequestsCreate,
+        nodegit,
+        tmp,
+        addBackstrokeBotAsCollaborator,
+        forkRepository,
         throttleBatch,
         checkRateLimit
       );

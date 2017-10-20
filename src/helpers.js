@@ -105,6 +105,27 @@ async function addBackstrokeBotAsCollaborator(github, owner, repo) {
   });
 }
 
+// Fork a repository on github.
+async function forkRepository(github, owner, repo) {
+  return new Promise((resolve, reject) => {
+    // Use the link owner's token when making the request
+    github.authenticate({type: "oauth", token: process.env.GITHUB_TOKEN});
+
+    // Make request.
+    const username = process.env.GITHUB_BOT_USERNAME || 'backstroke-bot';
+    github.repos.fork({
+      owner,
+      repo,
+    }, err => {
+      if (err) {
+        reject(new Error(`Couldn't fork ${owner}/${repo} to ${username}/${repo}: ${err.message ? err.message : err}`));
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
 const generatePullRequestTitle = (user, repo, branch) => `Update from upstream repo ${user}/${repo}@${branch}`;
 const generatePullRequestBody = (user, repo, branch) => `Hello!\n
 The remote \`${user}/${repo}@${branch}\` has some new changes that aren't in this fork.
@@ -178,4 +199,6 @@ module.exports = {
   createPullRequest,
   didRepoOptOut,
   checkRateLimit,
+  forkRepository,
+  addBackstrokeBotAsCollaborator,
 };
