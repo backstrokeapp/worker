@@ -83,6 +83,8 @@ function didRepoOptOut(github, user, owner, repo) {
 // Add the backstroke bot user as a collaorabor on the given repository.
 async function addBackstrokeBotAsCollaborator(github, owner, repo) {
   return new Promise((resolve, reject) => {
+    const github = new GitHubApi({timeout: 5000});
+
     // Use the link owner's token when making the request
     github.authenticate({type: "oauth", token: user.accessToken});
 
@@ -105,9 +107,11 @@ async function addBackstrokeBotAsCollaborator(github, owner, repo) {
   });
 }
 
-// Fork a repository on github.
-async function forkRepository(github, owner, repo) {
+// Fork a repository on github into the backstroke-bot user account.
+async function forkRepository(owner, repo) {
   return new Promise((resolve, reject) => {
+    const github = new GitHubApi({timeout: 5000});
+
     // Use the link owner's token when making the request
     github.authenticate({type: "oauth", token: process.env.GITHUB_TOKEN});
 
@@ -127,21 +131,46 @@ async function forkRepository(github, owner, repo) {
 }
 
 const generatePullRequestTitle = (user, repo, branch) => `Update from upstream repo ${user}/${repo}@${branch}`;
-const generatePullRequestBody = (user, repo, branch) => `Hello!\n
-The remote \`${user}/${repo}@${branch}\` has some new changes that aren't in this fork.
-So, here they are, ready to be merged! :tada:
+const generatePullRequestBody = link => {
+  switch (link.forkType) {
+    case 'fork-all':
+    case 'repo':
+      return `Hello!\n
+The upstream repository \`${link.upstreamOwner}/${link.upstreamRepo}@${link.upstreamBranch}\` has \\
+some new changes that aren't in this fork. So, here they are, ready to be merged! :tada:
 
-If this pull request can be merged without conflict, you can publish your software
-with these new changes. Otherwise, fix any merge conflicts by clicking the \`Resolve Conflicts\`
+If this pull request can be merged without conflict, you can publish your software \\
+with these new changes. Otherwise, fix any merge conflicts by clicking the \`Resolve Conflicts\` \\
 button.
 
 Have fun!
 --------
-Created by [Backstroke](http://backstroke.co) (I'm a bot!)
-`.replace('\n', '');
+Created by [Backstroke](https://backstroke.co) (I'm a bot!)
+`.replace(/\\\n/g, '');
+
+    case 'unrelated-repo':
+      return `Hello!\n
+The upstream repository \`${link.upstreamOwner}/${link.upstreamRepo}@${link.upstreamBranch}\` has \\
+some new changes that aren't in this repository. So, here they are, ready to be merged! :tada:
+
+Since this repository isn't related to the upstream, I've copied the contents of the \\
+upstream repository into the \`${link.upstreamOwner}\` branch within a [temporary \\
+repository](https://github.com/${process.env.GITHUB_BOT_USERNAME || 'backstroke-bot'}/${link.forkRepo}/tree/${link.upstreamOwner}) \\
+to make syncing an out-of-network upstream possible - [Read more](http://bit.ly/backstroke-out-of-network).
+
+If this pull request can be merged without conflict, you can publish your software\\
+with these new changes. Otherwise, fix any merge conflicts by clicking the \`Resolve Conflicts\`\\
+button.
+
+Have fun!
+--------
+Created by [Backstroke](https://backstroke.co) (I'm a bot!)
+`.replace(/\\\n/g, '');
+  }
+};
 
 
-async function createPullRequest(user, link, fork, debug, didRepoOptOut, githubPullRequestsCreate) {
+async function createPullRequest(user, link, upstream, fork, debug, didRepoOptOut, githubPullRequestsCreate) {
   const github = new GitHubApi({timeout: 5000});
   if (!process.env.GITHUB_TOKEN) {
     if (process.env.NODE_ENV !== 'test') {
@@ -173,9 +202,9 @@ async function createPullRequest(user, link, fork, debug, didRepoOptOut, githubP
         owner: fork.owner,
         repo: fork.repo,
         title: generatePullRequestTitle(link.upstreamOwner, link.upstreamRepo, link.upstreamBranch),
-        head: `${link.upstreamOwner}:${link.upstreamBranch}`,
-        base: link.forkType === 'fork-all' ? link.upstreamBranch : link.forkBranch,
-        body: generatePullRequestBody(link.upstreamOwner, link.upstreamRepo, link.upstreamBranch),
+        head: `${upstream.owner}:${upstream.branch}`,
+        base: link.forkType === 'fork-all' ? upstream.branch : fork.branch,
+        body: generatePullRequestBody(link),
         maintainer_can_modify: false,
       }, err => {
         if (err && err.code === 422) {
