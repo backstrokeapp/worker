@@ -1,5 +1,6 @@
 const sinon = require('sinon');
 const assert = require('assert');
+const tmp = require('tmp-promise');
 
 const processBatch = require('./worker');
 
@@ -718,4 +719,125 @@ describe('webhook worker', () => {
     // Should have created two pull requests.
     assert.equal(pullRequestMock.callCount, 2);
   });
+});
+
+describe('unrelated repos', () => {
+  it('should create a pull request when given an unrelated repo', async () => {
+    const createPullRequest = require('./helpers').createPullRequest;
+    const getForksForRepo = sinon.stub().resolves([{
+      owner: {login: 'foo'},
+      name: 'bar',
+    }]);
+    const didRepoOptOut = sinon.stub().resolves(false);
+    const prMock = sinon.stub().yields(null);
+    const githubPullRequestsCreate = () => prMock;
+
+    const push = sinon.stub().resolves(false);
+    const nodegit = {
+      Remote: {
+        createAnonymous: sinon.stub().returns({push}),
+      },
+      Clone: sinon.stub().resolves('nodegit-clone-return'),
+    };
+    const addBackstrokeBotAsCollaborator = sinon.stub().resolves();
+    const forkRepository = sinon.stub().resolves();
+
+    const enqueuedAs = await MockWebhookQueue.push({
+      type: 'MANUAL',
+      user: {
+        id: 1,
+        username: '1egoman',
+        email: null,
+        githubId: '1704236',
+        accessToken: 'ACCESS TOKEN',
+        publicScope: false,
+        createdAt: '2017-08-09T12:00:36.000Z',
+        lastLoggedInAt: '2017-08-16T12:50:40.203Z',
+        updatedAt: '2017-08-16T12:50:40.204Z',
+      },
+      link: {
+        id: 8,
+        name: 'My Link',
+        enabled: true,
+        webhookId: '37948270678a440a97db01ebe71ddda2',
+        lastSyncedAt: '2017-08-17T11:37:22.999Z',
+        upstreamType: 'repo',
+        upstreamOwner: '1egoman',
+        upstreamRepo: 'backstroke',
+        upstreamIsFork: null,
+        upstreamBranches: '["inject","master"]',
+        upstreamBranch: 'master',
+        forkType: 'unrelated-repo',
+        forkOwner: '1egoman',
+        forkRepo: 'my-backstroke-duplicate',
+        forkBranches: '["master"]',
+        forkBranch: 'master',
+        createdAt: '2017-08-11T10:17:09.614Z',
+        updatedAt: '2017-08-17T11:37:23.001Z',
+        ownerId: 1,
+        owner: {
+          id: 1,
+          username: '1egoman',
+          email: null,
+          githubId: '1704236',
+          accessToken: 'ACCESS TOKEN',
+          publicScope: false,
+          createdAt: '2017-08-09T12:00:36.000Z',
+          lastLoggedInAt: '2017-08-16T12:50:40.203Z',
+          updatedAt: '2017-08-16T12:50:40.204Z',
+        }
+      },
+    });
+
+    // Run the worker that eats off the queue.
+    await processBatch(
+      MockWebhookQueue,
+      MockWebhookStatusStore,
+      () => null, //console.log.bind(console, '* '),
+      getForksForRepo,
+      createPullRequest,
+      didRepoOptOut,
+      githubPullRequestsCreate,
+      nodegit,
+      tmp,
+      addBackstrokeBotAsCollaborator,
+      forkRepository
+    );
+
+    // Make sure that it worked
+    const response = MockWebhookStatusStore.keys[enqueuedAs].status;
+    assert.equal(response.status, 'OK');
+    assert.deepEqual(response.output, {
+      isEnabled: true,
+      many: false,
+      unrelatedForks: true,
+      forkCount: 1,
+      response: 'Successfully created pull request on 1egoman/my-backstroke-duplicate',
+    });
+
+    // Make sure that a temporary fork was created
+    assert.equal(forkRepository.callCount, 1);
+
+    // Ensure that the upstream was cloned
+    assert.equal(nodegit.Clone.firstCall.args[0], `https://github.com/1egoman/backstroke`);
+
+    // And the cloned upstream was pushed to the fork that was made of the duplicate
+    assert.equal(
+      nodegit.Remote.createAnonymous.firstCall.args[1],
+      `https://github.com/backstroke-bot/my-backstroke-duplicate`
+    );
+    assert.equal(push.callCount, 1);
+
+    // Also make sure that the pull request was created
+    assert.equal(prMock.callCount, 1);
+    assert.equal(prMock.firstCall.args[0].owner, '1egoman');
+    assert.equal(prMock.firstCall.args[0].repo, 'my-backstroke-duplicate');
+    assert.equal(prMock.firstCall.args[0].title, 'Update from upstream repo 1egoman/backstroke@master');
+    // Making pull request from temporary repo (branch corresponds to the username the upstream is from)
+    assert.equal(prMock.firstCall.args[0].head, 'backstroke-bot:1egoman');
+    assert.equal(prMock.firstCall.args[0].base, 'master');
+    assert.equal(prMock.firstCall.args[0].maintainer_can_modify, false);
+  });
+
+  it('should try to create a pull request for an unrelated repo but be able to handle when the fork was already created on the bot user');
 });
