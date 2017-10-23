@@ -719,10 +719,8 @@ describe('webhook worker', () => {
     // Should have created two pull requests.
     assert.equal(pullRequestMock.callCount, 2);
   });
-});
 
-describe('unrelated repos', () => {
-  it('should create a pull request when given an unrelated repo', async () => {
+  it('should create a pull request when given an unrelated repo, by joinging through the bot user account', async () => {
     const createPullRequest = require('./helpers').createPullRequest;
     const getForksForRepo = sinon.stub().resolves([{
       owner: {login: 'foo'},
@@ -838,6 +836,4 @@ describe('unrelated repos', () => {
     assert.equal(prMock.firstCall.args[0].base, 'master');
     assert.equal(prMock.firstCall.args[0].maintainer_can_modify, false);
   });
-
-  it('should try to create a pull request for an unrelated repo but be able to handle when the fork was already created on the bot user');
 });
