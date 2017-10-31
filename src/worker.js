@@ -162,7 +162,7 @@ async function processFromQueue(
           callbacks: {
             certificateCheck: function() { return 1; },
             credentials: function(url, userName) {
-              return NodeGit.Cred.userpassPlaintextNew(process.env.GITHUB_TOKEN, "x-oauth-basic");
+              return NodeGit.Cred.userpassPlaintextNew(process.env.GITHUB_TOKEN, 'x-oauth-basic');
             },
           },
         },
@@ -176,19 +176,18 @@ async function processFromQueue(
       tempFork,
       `https://github.com/${tempForkOwner}/${tempForkRepo}`
     );
-    const pushError = await tempForkRemote.push([
-      `+HEAD:refs/heads/${tempForkBranch}`, /* The `+` prefix means a force push, fwiw */
-    ], {
-      callbacks: {
-        credentials(url, userName) {
-          return nodegit.Cred.userpassPlaintextNew(process.env.GITHUB_TOKEN, "x-oauth-basic");
+    try {
+      await tempForkRemote.push([
+        `+HEAD:refs/heads/${tempForkBranch}`, /* The `+` prefix means a force push, fwiw */
+      ], {
+        callbacks: {
+          credentials(url, userName) {
+            return nodegit.Cred.userpassPlaintextNew(process.env.GITHUB_TOKEN, 'x-oauth-basic');
+          },
         },
-      },
-    });
-
-    // Ensure pushing didn't return an error.
-    if (pushError) {
-      throw new Error(`Error received while pushing ${tempForkOwner}/${tempForkBranch}: ${pushError}`);
+      });
+    } catch (error) {
+      throw new Error(`Error received while pushing ${tempForkOwner}/${tempForkBranch}: ${error.message || error}`);
     }
 
     // Remove temp fork from disk
