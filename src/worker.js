@@ -142,7 +142,7 @@ async function processFromQueue(
   case 'unrelated-repo': {
     // Define the intermediate repository details.
     const tempForkOwner = process.env.GITHUB_BOT_USERNAME || 'backstroke-bot';
-    const tempForkRepo = link.forkRepo;
+    const tempForkRepo = `temporary-${link.forkRepo}`; /* Clearly mark the repo as ephemeral */
     const tempForkBranch = link.forkOwner; /* Name the branch after the user the fork is under */
 
     // Backstroke-bot forks our fork into the intermediate fork. If the fork already exists, this is

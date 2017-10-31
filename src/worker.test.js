@@ -822,7 +822,7 @@ describe('webhook worker', () => {
     // And the cloned upstream was pushed to the fork that was made of the duplicate
     assert.equal(
       nodegit.Remote.createAnonymous.firstCall.args[1],
-      `https://github.com/backstroke-bot/my-backstroke-duplicate`
+      `https://github.com/backstroke-bot/temporary-my-backstroke-duplicate`
     );
     assert.equal(push.callCount, 1);
 
