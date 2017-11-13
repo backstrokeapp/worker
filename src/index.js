@@ -15,7 +15,7 @@ const checkRateLimit = require('./helpers').checkRateLimit;
 const githubPullRequestsCreate = github => github.pullRequests.create
 
 const ONE_HOUR_IN_SECONDS = 60 * 60;
-const LINK_OPERATION_EXPIRY_TIME_IN_SECONDS = 24*ONE_HOUR_IN_SECONDS;
+const LINK_OPERATION_EXPIRY_TIME_IN_SECONDS = 24 * ONE_HOUR_IN_SECONDS;
 const debug = require('debug')('backstroke:webhook-status-store');
 const WebhookStatusStore = {
   set(webhookId, status, expiresIn=LINK_OPERATION_EXPIRY_TIME_IN_SECONDS) {
