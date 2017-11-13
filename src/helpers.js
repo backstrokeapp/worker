@@ -230,14 +230,29 @@ async function createPullRequest(user, link, upstream, fork, debug, didRepoOptOu
         maintainer_can_modify: false,
       }, err => {
         if (err && err.code === 422) {
+          let message;
+          try {
+            message = JSON.parse(err.message).errors[0].message;
+          } catch (e) {
+            message = `There's already a pull request on ${link.forkOwner}/${link.forkRepo}`
+          }
+
+          if (message.indexOf('No commits between') === 0) {
+            message = `The upstream and fork are already up to date.`;
+          }
+
+          if (message.indexOf('A pull request already exists for') === 0) {
+            message = `A Backstroke pull request is already open on the fork.`;
+          }
+
           // The pull request already existed
           debug(`Already a pull request on ${fork.owner}/${fork.repo} from ${link.upstreamOwner}/${link.upstreamRepo}`);
-          resolve(`There's already a pull request on ${link.forkOwner}/${link.forkRepo}`);
+          resolve(message);
         } else if (err) {
           // Still reject anything else
           reject(new Error(`Couldn't create pull request on repository ${fork.owner}/${fork.repo}: ${err.message ? err.message : err}`));
         } else {
-          resolve(`Successfully created pull request on ${fork.owner}/${fork.repo}`);
+          resolve(`Successfully synced link.`);
         }
       });
     });
