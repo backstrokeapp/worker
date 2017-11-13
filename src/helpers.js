@@ -143,7 +143,18 @@ If this pull request can be merged without conflict, you can publish your softwa
 with these new changes. Otherwise, fix any merge conflicts by clicking the \`Resolve Conflicts\` \\
 button.
 
-Have fun!
+--------
+<img
+  src="https://backstroke.co/assets/img/donate.png"
+  height="92"
+  align="left"
+/>
+
+If you like Backstroke, consider chipping in to help pay the server bill \\
+<a href="https://gratipay.com/Backstroke/">here</a>. Backstroke is a completely open source \\
+project that's free to use, but we survive on sponsorships and donations. Thanks for your \\
+support! <a href="https://gratipay.com/Backstroke/">Help out Backstroke</a>.
+
 --------
 Created by [Backstroke](https://backstroke.co) (I'm a bot!)
 `.replace(/\\\n/g, '');
@@ -162,7 +173,18 @@ If this pull request can be merged without conflict, you can publish your softwa
 with these new changes. Otherwise, fix any merge conflicts by clicking the \`Resolve Conflicts\`\\
 button.
 
-Have fun!
+--------
+<img
+  src="https://backstroke.co/assets/img/donate.png"
+  height="92"
+  align="left"
+/>
+
+If you like Backstroke, consider chipping in to help pay the server bill \\
+<a href="https://gratipay.com/Backstroke/">here</a>. Backstroke is a completely open source \\
+project that's free to use, but we survive on sponsorships and donations. Thanks for your \\
+support! <a href="https://gratipay.com/Backstroke/">Help out Backstroke</a>.
+
 --------
 Created by [Backstroke](https://backstroke.co) (I'm a bot!)
 `.replace(/\\\n/g, '');
