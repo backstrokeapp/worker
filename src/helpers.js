@@ -164,7 +164,7 @@ Created by [Backstroke](https://backstroke.co) (I'm a bot!)
 The upstream repository \`${link.upstreamOwner}/${link.upstreamRepo}@${link.upstreamBranch}\` has \\
 some new changes that aren't in this repository. So, here they are, ready to be merged! :tada:
 
-Since this repository isn't related to the upstream, I've copied the contents of the \\
+Since this repository isn't in the same network as the upstream, I've copied the contents of the \\
 upstream repository into the \`${link.upstreamOwner}\` branch within a [temporary \\
 repository](https://github.com/${process.env.GITHUB_BOT_USERNAME || 'backstroke-bot'}/${link.forkRepo}/tree/${link.upstreamOwner}) \\
 to make syncing an out-of-network upstream possible - [Read more](http://bit.ly/backstroke-out-of-network).
