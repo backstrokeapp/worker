@@ -15,9 +15,10 @@ const checkRateLimit = require('./helpers').checkRateLimit;
 const githubPullRequestsCreate = github => github.pullRequests.create
 
 const ONE_HOUR_IN_SECONDS = 60 * 60;
+const LINK_OPERATION_EXPIRY_TIME_IN_SECONDS = 24 * ONE_HOUR_IN_SECONDS;
 const debug = require('debug')('backstroke:webhook-status-store');
 const WebhookStatusStore = {
-  set(webhookId, status, expiresIn=24*ONE_HOUR_IN_SECONDS) {
+  set(webhookId, status, expiresIn=LINK_OPERATION_EXPIRY_TIME_IN_SECONDS) {
     return new Promise((resolve, reject) => {
       redis.set(`webhook:status:${webhookId}`, JSON.stringify(status), 'EX', expiresIn, (err, id) => {
         if (err) {
@@ -56,6 +57,44 @@ const WebhookStatusStore = {
         } else {
           // Resolves the cached data.
           resolve(JSON.parse(data));
+        }
+      });
+    });
+  },
+  attachToLink(linkId, webhookId) {
+    return new Promise((resolve, reject) => {
+      // Get unix epoch timestamp in seconds.
+      // FIXME: should use redis time. We're not accounting for any sort of server time drift here.
+      const timestamp = Math.floor(new Date().getTime() / 1000);
+
+      // Step 1: Remove all link operations that have expired.
+      // This is a workaround because items within a set can't have a TTL, see:
+      // https://stackoverflow.com/a/37184581/4115328
+      redis.zremrangebyscore(
+        `webhook:operations:${linkId}`,
+        // From the start of time (1970) to 24h ago
+        0, timestamp - LINK_OPERATION_EXPIRY_TIME_IN_SECONDS,
+      err => {
+        if (err) {
+          reject(err);
+        } else {
+          // Step 2: Add our new link operation to the set associated with the link, giving it a
+          // score of the timestamp.
+          redis.zadd(`webhook:operations:${linkId}`, timestamp, webhookId, (err, data) => {
+            if (err) {
+              reject(err);
+            } else {
+              // Step 3: Set an expire time on the set associated with the link.
+              redis.expire(`webhook:operations:${linkId}`, LINK_OPERATION_EXPIRY_TIME_IN_SECONDS, err => {
+                if (err) {
+                  reject(err);
+                } else {
+                  // Resolves the cached data.
+                  resolve(JSON.parse(data));
+                }
+              });
+            }
+          });
         }
       });
     });
@@ -111,7 +150,8 @@ WebhookQueue.initialize();
 
 // Logging function to use in webhooks.
 function logger() {
-  console.log.apply(console, ['   *', ...arguments]);
+  const timestamp = (new Date()).toUTCString();
+  console.log.apply(console, [`* [${timestamp}]  `, ...arguments]);
 }
 
 

@@ -153,8 +153,11 @@ module.exports = async function processBatch(
     const link = webhook.data.link;
     const user = webhook.data.user;
 
+    // Inform redis of the associatio between the operation and the link.
+    await WebhookStatusStore.attachToLink(link.id, webhook.id);
+
     // Log the type of update that is happening.
-    process.env.NODE_ENV !== 'test' && console.log(`=> * Handling webhook ${webhook.id}:`);
+    process.env.NODE_ENV !== 'test' && console.log(`* [${(new Date()).toUTCString()}] => Handling webhook ${webhook.id}:`);
     debug(`From: ${link.upstreamOwner}/${link.upstreamRepo}@${link.upstreamBranch}`);
     if (link.forkType === 'fork-all') {
       debug(`To: all forks @ ${link.upstreamBranch} (uses upstream branch)`);
