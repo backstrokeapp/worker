@@ -84,8 +84,15 @@ const WebhookStatusStore = {
             if (err) {
               reject(err);
             } else {
-              // Resolves the cached data.
-              resolve(JSON.parse(data));
+              // Step 3: Set an expire time on the set associated with the link.
+              redis.expire(`webhook:operations:${linkId}`, LINK_OPERATION_EXPIRY_TIME_IN_SECONDS, err => {
+                if (err) {
+                  reject(err);
+                } else {
+                  // Resolves the cached data.
+                  resolve(JSON.parse(data));
+                }
+              });
             }
           });
         }
@@ -144,7 +151,7 @@ WebhookQueue.initialize();
 // Logging function to use in webhooks.
 function logger() {
   const timestamp = (new Date()).toUTCString();
-  console.log.apply(console, [`* [${timestamp}]   `, ...arguments]);
+  console.log.apply(console, [`* [${timestamp}]  `, ...arguments]);
 }
 
 
