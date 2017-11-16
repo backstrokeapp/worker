@@ -143,7 +143,8 @@ WebhookQueue.initialize();
 
 // Logging function to use in webhooks.
 function logger() {
-  console.log.apply(console, ['   *', ...arguments]);
+  const timestamp = (new Date()).toUTCString();
+  console.log.apply(console, [`* [${timestamp}]   `, ...arguments]);
 }
 
 
