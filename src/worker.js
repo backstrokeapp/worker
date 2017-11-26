@@ -146,6 +146,7 @@ module.exports = async function processBatch(
     const startedAt = (new Date()).toISOString();
     await WebhookStatusStore.set(webhook.id, {
       status: RUNNING,
+      type: webhook.data.type,
       startedAt,
     });
 
@@ -183,6 +184,7 @@ module.exports = async function processBatch(
       // Successful! Update redis to say so.
       await WebhookStatusStore.set(webhook.id, {
         status: OK,
+        type: webhook.data.type,
         startedAt,
         finishedAt: (new Date()).toISOString(),
         output,
@@ -193,6 +195,7 @@ module.exports = async function processBatch(
       // Error! Update redis to say so.
       await WebhookStatusStore.set(webhook.id, {
         status: ERROR,
+        type: webhook.data.type,
         startedAt,
         finishedAt: (new Date()).toISOString(),
         output: {error: error.message, stack: error.stack},
