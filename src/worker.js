@@ -49,7 +49,7 @@ async function processFromQueue(
 
   // Step 1: are we dealing with a repo to merge into or all the forks of a repo?
   if (link.forkType === 'repo') {
-    debug('Webhook is on the fork. Making a pull request to the single fork repository.');
+    debug('Operation is on the fork. Making a pull request to the single fork repository.');
 
     // Ensure we didn't go over the token rate limit prior to making the pull request.
     await didNotGoOverRateLimit(debug, checkRateLimit);
@@ -74,7 +74,7 @@ async function processFromQueue(
       response,
     };
   } else if (link.forkType === 'fork-all') {
-    debug('Webhook is on the upstream. Aggregating all forks...');
+    debug('Operation is on the upstream. Aggregating all forks...');
     // Aggregate all forks of the upstream.
     const forks = await paginateRequest(getForksForRepo, [user, {
       owner: link.upstreamOwner,
@@ -137,27 +137,28 @@ module.exports = async function processBatch(
     // Ensure we didn't go over the token rate limit prior to handling another link.
     await didNotGoOverRateLimit(debug, checkRateLimit);
 
-    // Fetch a new webhook event.
-    const webhook = await WebhookQueue.pop();
+    // Fetch a new operation event.
+    const operation = await WebhookQueue.pop();
     // The queue is empty? Cool, we're done.
-    if (!webhook) { break; }
+    if (!operation) { break; }
 
-    // Let redis know that we are starting to process this webhook.
+    // Let redis know that we are starting to process this operation.
     const startedAt = (new Date()).toISOString();
-    await WebhookStatusStore.set(webhook.id, {
+    await WebhookStatusStore.set(operation.id, {
       status: RUNNING,
+      type: operation.data.type,
       startedAt,
     });
 
     // Extract a number of helpful values for use in the below code.
-    const link = webhook.data.link;
-    const user = webhook.data.user;
+    const link = operation.data.link;
+    const user = operation.data.user;
 
     // Inform redis of the associatio between the operation and the link.
-    await WebhookStatusStore.attachToLink(link.id, webhook.id);
+    await WebhookStatusStore.attachToLink(link.id, operation.id);
 
     // Log the type of update that is happening.
-    process.env.NODE_ENV !== 'test' && console.log(`* [${(new Date()).toUTCString()}] => Handling webhook ${webhook.id}:`);
+    process.env.NODE_ENV !== 'test' && console.log(`* [${(new Date()).toUTCString()}] => Handling operation ${operation.id}:`);
     debug(`From: ${link.upstreamOwner}/${link.upstreamRepo}@${link.upstreamBranch}`);
     if (link.forkType === 'fork-all') {
       debug(`To: all forks @ ${link.upstreamBranch} (uses upstream branch)`);
@@ -181,8 +182,9 @@ module.exports = async function processBatch(
       debug('Result:', output);
 
       // Successful! Update redis to say so.
-      await WebhookStatusStore.set(webhook.id, {
+      await WebhookStatusStore.set(operation.id, {
         status: OK,
+        type: operation.data.type,
         startedAt,
         finishedAt: (new Date()).toISOString(),
         output,
@@ -191,8 +193,9 @@ module.exports = async function processBatch(
       });
     } catch (error) {
       // Error! Update redis to say so.
-      await WebhookStatusStore.set(webhook.id, {
+      await WebhookStatusStore.set(operation.id, {
         status: ERROR,
+        type: operation.data.type,
         startedAt,
         finishedAt: (new Date()).toISOString(),
         output: {error: error.message, stack: error.stack},
