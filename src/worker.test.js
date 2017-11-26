@@ -9,6 +9,7 @@ const MockWebhookQueue = {
   reset() {
     this.queue = [];
   },
+
   push(data) {
     const id = (new Date()).getTime();
     this.queue.push({id, data});
@@ -22,6 +23,12 @@ const MockWebhookQueue = {
 
 const MockWebhookStatusStore = {
   keys: {},
+  links: {},
+  reset() {
+    this.keys = {};
+    this.links = {};
+  },
+
   set(webhookId, status) {
     const id = (new Date()).getTime();
     this.keys[webhookId] = {status, id};
@@ -30,9 +37,22 @@ const MockWebhookStatusStore = {
   get(webhookId) {
     return Promise.resolve(this.keys[webhookId].status);
   },
+  attachToLink(linkId, webhookId) {
+    this.links[linkId] = [
+      ...(this.links[linkId] || []),
+      webhookId,
+    ];
+    return Promise.resolve();
+  }
 };
 
 describe('webhook worker', () => {
+  // Before each test, reset both mocks.
+  beforeEach(() => {
+    MockWebhookQueue.reset();
+    MockWebhookStatusStore.reset();
+  });
+
   it('should create a pull request when given a single fork', async () => {
     const createPullRequest = require('./helpers').createPullRequest;
     const getForksForRepo = sinon.stub().resolves([{
@@ -109,6 +129,10 @@ describe('webhook worker', () => {
       forkCount: 1,
       response: 'Successfully created pull request on rgaus/backstroke',
     });
+
+    // Make sure that the operation was properly attached to the link
+    // 8 = link id, enqueuedAs = link operation id
+    assert.deepEqual(MockWebhookStatusStore.links[8], [enqueuedAs]);
   });
   it('should create a pull request on each fork when given a bunch of forks', async () => {
     const createPullRequest = require('./helpers').createPullRequest;
@@ -191,6 +215,10 @@ describe('webhook worker', () => {
 
     // Should have created two pull requests.
     assert.equal(pullRequestMock.callCount, 2);
+
+    // Make sure that the operation was properly attached to the link
+    // 8 = link id, enqueuedAs = link operation id
+    assert.deepEqual(MockWebhookStatusStore.links[8], [enqueuedAs]);
   });
 
   it('should try to make a PR to a single fork of an upstream, but the repo opted out', async () => {
