@@ -150,10 +150,10 @@ button.
   align="left"
 />
 
-If you like Backstroke, consider chipping in to help pay the server bill \\
-<a href="https://gratipay.com/Backstroke/">here</a>. Backstroke is a completely open source \\
+If you like Backstroke, consider donating to help us pay for infrastructure \\
+<a href="https://liberapay.com/Backstroke/">here</a>. Backstroke is a completely open source \\
 project that's free to use, but we survive on sponsorships and donations. Thanks for your \\
-support! <a href="https://gratipay.com/Backstroke/">Help out Backstroke</a>.
+support! <a href="https://liberapay.com/Backstroke/">Help out Backstroke</a>.
 
 --------
 Created by [Backstroke](https://backstroke.co) (I'm a bot!)
@@ -180,10 +180,10 @@ button.
   align="left"
 />
 
-If you like Backstroke, consider chipping in to help pay the server bill \\
-<a href="https://gratipay.com/Backstroke/">here</a>. Backstroke is a completely open source \\
+If you like Backstroke, consider donating to help us pay for infrastructure \\
+<a href="https://liberapay.com/Backstroke/">here</a>. Backstroke is a completely open source \\
 project that's free to use, but we survive on sponsorships and donations. Thanks for your \\
-support! <a href="https://gratipay.com/Backstroke/">Help out Backstroke</a>.
+support! <a href="https://liberapay.com/Backstroke/">Help out Backstroke</a>.
 
 --------
 Created by [Backstroke](https://backstroke.co) (I'm a bot!)
