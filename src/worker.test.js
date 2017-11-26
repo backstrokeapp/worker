@@ -127,7 +127,7 @@ describe('webhook worker', () => {
       isEnabled: true,
       many: false,
       forkCount: 1,
-      response: 'Successfully created pull request on rgaus/backstroke',
+      response: 'Successfully synced link.',
     });
 
     // Make sure that the operation was properly attached to the link
@@ -838,7 +838,7 @@ describe('webhook worker', () => {
       many: false,
       unrelatedForks: true,
       forkCount: 1,
-      response: 'Successfully created pull request on 1egoman/my-backstroke-duplicate',
+      response: 'Successfully synced link.',
     });
 
     // Make sure that a temporary fork was created
@@ -850,7 +850,7 @@ describe('webhook worker', () => {
     // And the cloned upstream was pushed to the fork that was made of the duplicate
     assert.equal(
       nodegit.Remote.createAnonymous.firstCall.args[1],
-      `https://github.com/backstroke-bot/temporary-my-backstroke-duplicate`
+      `https://github.com/backstroke-bot/my-backstroke-duplicate`
     );
     assert.equal(push.callCount, 1);
 
