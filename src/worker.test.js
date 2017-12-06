@@ -748,6 +748,82 @@ describe('webhook worker', () => {
     assert.equal(pullRequestMock.callCount, 2);
   });
 
+  it('should create a pull request when given a single fork, adding the request id properly', async () => {
+    const createPullRequest = require('./helpers').createPullRequest;
+    const getForksForRepo = sinon.stub().resolves([{
+      owner: {login: 'foo'},
+      name: 'bar',
+    }]);
+    const didRepoOptOut = sinon.stub().resolves(false);
+    const githubPullRequestsCreate = () => sinon.stub().yields(null);
+
+    const enqueuedAs = await MockWebhookQueue.push({
+      type: 'MANUAL',
+      user: {
+        id: 1,
+        username: '1egoman',
+        email: null,
+        githubId: '1704236',
+        accessToken: 'ACCESS TOKEN',
+        publicScope: false,
+        createdAt: '2017-08-09T12:00:36.000Z',
+        lastLoggedInAt: '2017-08-16T12:50:40.203Z',
+        updatedAt: '2017-08-16T12:50:40.204Z',
+      },
+      link: {
+        id: 8,
+        name: 'My Link',
+        enabled: true,
+        webhookId: '37948270678a440a97db01ebe71ddda2',
+        lastSyncedAt: '2017-08-17T11:37:22.999Z',
+        upstreamType: 'repo',
+        upstreamOwner: '1egoman',
+        upstreamRepo: 'backstroke',
+        upstreamIsFork: null,
+        upstreamBranches: '["inject","master"]',
+        upstreamBranch: 'master',
+        forkType: 'repo',
+        forkOwner: 'rgaus',
+        forkRepo: 'backstroke',
+        forkBranches: '["master"]',
+        forkBranch: 'master',
+        createdAt: '2017-08-11T10:17:09.614Z',
+        updatedAt: '2017-08-17T11:37:23.001Z',
+        ownerId: 1,
+        owner: {
+          id: 1,
+          username: '1egoman',
+          email: null,
+          githubId: '1704236',
+          accessToken: 'ACCESS TOKEN',
+          publicScope: false,
+          createdAt: '2017-08-09T12:00:36.000Z',
+          lastLoggedInAt: '2017-08-16T12:50:40.203Z',
+          updatedAt: '2017-08-16T12:50:40.204Z',
+        }
+      },
+      fromRequest: 'AC120001:C5A6_AC120009:0050_5A229DF8_0004:0007', /* Example request id */
+    });
+
+    // Run the worker that eats off the queue.
+    await processBatch(
+      MockWebhookQueue,
+      MockWebhookStatusStore,
+      () => null, //console.log.bind(console, '* '),
+      getForksForRepo,
+      createPullRequest,
+      didRepoOptOut,
+      githubPullRequestsCreate
+    );
+
+    // Make sure that it worked
+    const response = MockWebhookStatusStore.keys[enqueuedAs].status;
+    assert.equal(response.status, 'OK');
+
+    // Ensure that the request id ended up in the body of the response.
+    assert.deepEqual(response.fromRequest, 'AC120001:C5A6_AC120009:0050_5A229DF8_0004:0007');
+  });
+
   it('should create a pull request when given an unrelated repo, by joinging through the bot user account', async () => {
     const createPullRequest = require('./helpers').createPullRequest;
     const getForksForRepo = sinon.stub().resolves([{
