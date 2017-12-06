@@ -262,7 +262,7 @@ module.exports = async function processBatch(
       status: RUNNING,
       type: operation.data.type,
       startedAt,
-      fromRequest: operation.fromRequest, /* Forward request id to the enxt thing in the chain */
+      fromRequest: operation.data.fromRequest, /* Forward request id to the next thing in the chain */
     });
 
     // Extract a number of helpful values for use in the below code.
@@ -309,7 +309,7 @@ module.exports = async function processBatch(
         output,
         link,
         handledBy: crypto.createHash('sha256').update(hostname()).digest('base64'),
-        fromRequest: operation.fromRequest, /* Forward request id to the enxt thing in the chain */
+        fromRequest: operation.data.fromRequest, /* Forward request id to the next thing in the chain */
       });
     } catch (error) {
       // Error! Update redis to say so.
@@ -320,7 +320,7 @@ module.exports = async function processBatch(
         finishedAt: (new Date()).toISOString(),
         output: {error: error.message, stack: error.stack},
         link: Object.assign({}, link, {user: undefined}),
-        fromRequest: operation.fromRequest, /* Forward request id to the enxt thing in the chain */
+        fromRequest: operation.data.fromRequest, /* Forward request id to the next thing in the chain */
       });
     }
   }
