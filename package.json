@@ -7,7 +7,9 @@
     "chalk": "^2.1.0",
     "github": "^9.2.0",
     "minimist": "^1.2.0",
-    "rsmq": "^0.8.2"
+    "nodegit": "^0.20.3",
+    "rsmq": "^0.8.2",
+    "tmp-promise": "^1.0.3"
   },
   "scripts": {
     "start": "node src/index.js",

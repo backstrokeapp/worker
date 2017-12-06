@@ -32,6 +32,10 @@ async function processFromQueue(
   createPullRequest,
   didRepoOptOut,
   githubPullRequestsCreate,
+  nodegit,
+  tmp,
+  addBackstrokeBotAsCollaborator,
+  forkRepository,
   throttleBatch=0,
   checkRateLimit=false
 ) {
@@ -47,8 +51,11 @@ async function processFromQueue(
     throw new Error('Please define both an upstream and fork on this link.');
   }
 
-  // Step 1: are we dealing with a repo to merge into or all the forks of a repo?
-  if (link.forkType === 'repo') {
+  // Step 1: What kind of operation are we performing?
+  switch (link.forkType) {
+
+  // Sync changes from one repository to another in-network repository.
+  case 'repo': {
     debug('Operation is on the fork. Making a pull request to the single fork repository.');
 
     // Ensure we didn't go over the token rate limit prior to making the pull request.
@@ -57,7 +64,12 @@ async function processFromQueue(
     const response = await createPullRequest(
       user,
       link,
-      {
+      { // Upstream
+        owner: link.upstreamOwner,
+        repo: link.upstreamRepo,
+        branch: link.upstreamBranch,
+      },
+      { // Fork
         owner: link.forkOwner,
         repo: link.forkRepo,
         branch: link.upstreamBranch, // same branch as the upstream. TODO: make this configurable.
@@ -73,7 +85,10 @@ async function processFromQueue(
       forkCount: 1, // just one repo
       response,
     };
-  } else if (link.forkType === 'fork-all') {
+  };
+
+  // Sync changes to all forks of the given repository
+  case 'fork-all': {
     debug('Operation is on the upstream. Aggregating all forks...');
     // Aggregate all forks of the upstream.
     const forks = await paginateRequest(getForksForRepo, [user, {
@@ -90,7 +105,12 @@ async function processFromQueue(
         const data = await createPullRequest(
           user,
           link,
-          {
+          { // Upstream
+            owner: link.upstreamOwner,
+            repo: link.upstreamRepo,
+            branch: link.upstreamBranch,
+          },
+          { // Fork
             owner: fork.owner.login,
             repo: fork.name,
             branch: link.forkBranch,
@@ -115,9 +135,99 @@ async function processFromQueue(
       errors: data.filter(i => i.status === 'ERROR'),
       isEnabled: true,
     };
-  } else {
+  };
+
+  // Sync changes from one repository that is out-of-network. This requires more work and more api
+  // calls, so it's a different option.
+  case 'unrelated-repo': {
+    // Define the intermediate repository details.
+    const tempForkOwner = process.env.GITHUB_BOT_USERNAME || 'backstroke-bot';
+    const tempForkRepo = link.forkRepo;
+    const tempForkBranch = link.forkOwner; /* Name the branch after the user the fork is under */
+
+    // Backstroke-bot forks our fork into the intermediate fork. If the fork already exists, this is
+    // a noop.
+    debug(`Forking ${link.forkOwner}/${link.forkRepo} to ${tempForkOwner}/${tempForkRepo}`);
+    await forkRepository(link.forkOwner, link.forkRepo);
+
+    // Clone down the upstream
+    // user/upstream@master => local
+    const tempForkDirectory = await tmp.dir({unsafeCleanup: true});
+    debug(`Cloning ${link.upstreamOwner}/${link.upstreamRepo} into local path ${tempForkDirectory.path}`);
+    const tempFork = await nodegit.Clone(
+      `https://github.com/${link.upstreamOwner}/${link.upstreamRepo}`,
+      tempForkDirectory.path,
+      {
+        fetchOpts: {
+          callbacks: {
+            certificateCheck: function() { return 1; },
+            credentials: function(url, userName) {
+              return NodeGit.Cred.userpassPlaintextNew(process.env.GITHUB_TOKEN, 'x-oauth-basic');
+            },
+          },
+        },
+      }
+    );
+
+    // Force push the upstream to the temp fork
+    // local => backstroke-bot/fork@user
+    debug(`Pushing local path ${tempForkDirectory.path} to ${tempForkOwner}/${tempForkRepo}@${tempForkBranch}`);
+    const tempForkRemote = await nodegit.Remote.createAnonymous(
+      tempFork,
+      `https://github.com/${tempForkOwner}/${tempForkRepo}`
+    );
+    try {
+      await tempForkRemote.push([
+        `+HEAD:refs/heads/${tempForkBranch}`, /* The `+` prefix means a force push, fwiw */
+      ], {
+        callbacks: {
+          credentials(url, userName) {
+            return nodegit.Cred.userpassPlaintextNew(process.env.GITHUB_TOKEN, 'x-oauth-basic');
+          },
+        },
+      });
+    } catch (error) {
+      throw new Error(`Error received while pushing ${tempForkOwner}/${tempForkBranch}: ${error.message || error}`);
+    }
+
+    // Remove temp fork from disk
+    tempForkDirectory.cleanup();
+    debug(`Cleaned up ${tempForkDirectory.path}`);
+
+    // At this point, the temporary fork mirrors the upstream, but since the temporary fork is
+    // related to the actual fork, create a pull request using it instead of the upstream.
+    // backstroke-bot/fork@user =PR=> user/fork@master
+    const response = await createPullRequest(
+      user,
+      link,
+      { // Upstream
+        owner: tempForkOwner,
+        repo: tempForkRepo,
+        branch: tempForkBranch,
+      },
+      { // Fork
+        owner: link.forkOwner,
+        repo: link.forkRepo,
+        branch: link.forkBranch,
+      },
+      debug,
+      didRepoOptOut,
+      githubPullRequestsCreate
+    );
+
+    return {
+      isEnabled: true,
+      many: false,
+      unrelatedForks: true,
+      forkCount: 1, // just one repo
+      response,
+    };
+  };
+
+  // None of those types passed? Bail.
+  default:
     throw new Error(`No such 'fork' type: ${link.forkType}`);
-  }
+  };
 }
 
 
@@ -130,6 +240,10 @@ module.exports = async function processBatch(
   createPullRequest,
   didRepoOptOut,
   githubPullRequestsCreate,
+  nodegit,
+  tmp,
+  addBackstrokeBotAsCollaborator,
+  forkRepository,
   throttleBatch=0,
   checkRateLimit=false
 ) {
@@ -148,6 +262,7 @@ module.exports = async function processBatch(
       status: RUNNING,
       type: operation.data.type,
       startedAt,
+      fromRequest: operation.fromRequest, /* Forward request id to the enxt thing in the chain */
     });
 
     // Extract a number of helpful values for use in the below code.
@@ -176,6 +291,10 @@ module.exports = async function processBatch(
         createPullRequest,
         didRepoOptOut,
         githubPullRequestsCreate,
+        nodegit,
+        tmp,
+        addBackstrokeBotAsCollaborator,
+        forkRepository,
         throttleBatch,
         checkRateLimit
       );
@@ -190,6 +309,7 @@ module.exports = async function processBatch(
         output,
         link,
         handledBy: crypto.createHash('sha256').update(hostname()).digest('base64'),
+        fromRequest: operation.fromRequest, /* Forward request id to the enxt thing in the chain */
       });
     } catch (error) {
       // Error! Update redis to say so.
@@ -200,6 +320,7 @@ module.exports = async function processBatch(
         finishedAt: (new Date()).toISOString(),
         output: {error: error.message, stack: error.stack},
         link: Object.assign({}, link, {user: undefined}),
+        fromRequest: operation.fromRequest, /* Forward request id to the enxt thing in the chain */
       });
     }
   }
