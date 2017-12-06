@@ -58,8 +58,10 @@ function checkRateLimit() {
 
 // Given a repository `user/repo` and a provider that the repo is located on (ex: `github`),
 // determine if the repo opted out.
-function didRepoOptOut(github, user, owner, repo) {
+function didRepoOptOut(user, owner, repo) {
   return new Promise((resolve, reject) => {
+    const github = new GitHubApi({timeout: 5000});
+
     // Use the link owner's token when making the request
     github.authenticate({type: "oauth", token: user.accessToken});
 
@@ -81,7 +83,7 @@ function didRepoOptOut(github, user, owner, repo) {
 }
 
 // Add the backstroke bot user as a collaorabor on the given repository.
-async function addBackstrokeBotAsCollaborator(github, owner, repo) {
+async function addBackstrokeBotAsCollaborator(owner, repo) {
   return new Promise((resolve, reject) => {
     const github = new GitHubApi({timeout: 5000});
 
@@ -204,7 +206,7 @@ async function createPullRequest(user, link, upstream, fork, debug, didRepoOptOu
     github.authenticate({type: "oauth", token: process.env.GITHUB_TOKEN});
   }
 
-  const didOptOut = await didRepoOptOut(github, user, fork.owner, fork.repo);
+  const didOptOut = await didRepoOptOut(user, fork.owner, fork.repo);
 
   // Do we have permission to make a pull request on the child?
   if (didOptOut) {
@@ -215,7 +217,7 @@ async function createPullRequest(user, link, upstream, fork, debug, didRepoOptOu
     if (fork.private) {
       const username = process.env.GITHUB_BOT_USERNAME || 'backstroke-bot';
       debug(`Fork ${fork.owner}/${fork.repo} is private, adding ${username} as a collaborator before proposing changes...`);
-      await addBackstrokeBotAsCollaborator(github, fork.owner, fork.repo);
+      await addBackstrokeBotAsCollaborator(fork.owner, fork.repo);
     }
 
     // Create a new pull request from the upstream to the child.
