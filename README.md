@@ -30,8 +30,8 @@ GITHUB_TOKEN=XXX REDIS_URL=redis://XXX yarn start
   `redis://user:password@host:port`.
 - `THROTTLE`: Provide an optional delay between handling each webhook operation. This is
   potentially handy to keep a worker from exhausing the rate limit on a token.
-- `GITHUB_BOT_USERNAME`: The username of the bot user that reates pull requests. Used to grant
-  permissions to the bot user on private repositories.
+- `GITHUB_BOT_USERNAME`: The username of the bot user that creates pull requests (defaults to
+  `backstroke-bot`). Used to grant permissions to the bot user on private repositories.
 
 ## Arguments
 - `--pr mock`: Tell the worker not to actually make pull requests, but only log out when it is about
