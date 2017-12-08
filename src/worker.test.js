@@ -141,6 +141,7 @@ describe('webhook worker', () => {
       {owner: {login: 'another'}, name: 'repo'},
     ]);
     const didRepoOptOut = sinon.stub().resolves(false);
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
     const pullRequestMock = sinon.stub().yields(null);
     const githubPullRequestsCreate = () => pullRequestMock;
@@ -200,7 +201,8 @@ describe('webhook worker', () => {
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      githubPullRequestsCreate
+      githubPullRequestsCreate,
+      didRepoOptInToPullRequests
     );
 
     // Make sure that it worked
@@ -666,6 +668,8 @@ describe('webhook worker', () => {
     ]);
     const didRepoOptOut = sinon.stub().resolves(false);
 
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
+
     const pullRequestMock = sinon.stub();
     pullRequestMock.onCall(0).yields(null);
     pullRequestMock.onCall(1).yields(new Error('Something bad happened.'));
@@ -726,7 +730,8 @@ describe('webhook worker', () => {
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      githubPullRequestsCreate
+      githubPullRequestsCreate,
+      didRepoOptInToPullRequests
     );
 
     // Make sure that it worked
@@ -900,6 +905,7 @@ describe('webhook worker', () => {
       createPullRequest,
       didRepoOptOut,
       githubPullRequestsCreate,
+      undefined, // didRepoOptInToPullRequests
       nodegit,
       tmp,
       addBackstrokeBotAsCollaborator,
@@ -1016,6 +1022,7 @@ describe('webhook worker', () => {
       createPullRequest,
       didRepoOptOut,
       githubPullRequestsCreate,
+      undefined, // didRepoOptInToPullRequests
       nodegit,
       tmp,
       addBackstrokeBotAsCollaborator,

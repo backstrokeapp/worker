@@ -82,6 +82,29 @@ function didRepoOptOut(user, owner, repo) {
   });
 }
 
+// Determine if the repository that was passed was told to receive backstroke pull requests.
+function didRepoOptInToPullRequests(user, owner, repo) {
+  return new Promise((resolve, reject) => {
+    const github = new GitHubApi({timeout: 5000});
+
+    // Use the link owner's token when making the request
+    github.authenticate({type: "oauth", token: user.accessToken});
+
+    // Make request.
+    github.issues.getLabel({
+      owner, repo,
+      name: 'backstroke-sync',
+    }, (err, issues) => {
+      if (err) {
+        // A 404 means that we shouldn't make pull requests.
+        return false;
+      } else {
+        return true;
+      }
+    });
+  });
+}
+
 // Add the backstroke bot user as a collaorabor on the given repository.
 async function addBackstrokeBotAsCollaborator(owner, repo) {
   return new Promise((resolve, reject) => {
@@ -266,6 +289,7 @@ module.exports = {
   getForksForRepo,
   createPullRequest,
   didRepoOptOut,
+  didRepoOptInToPullRequests,
   checkRateLimit,
   forkRepository,
   addBackstrokeBotAsCollaborator,

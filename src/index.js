@@ -13,6 +13,7 @@ const didRepoOptOut = require('./helpers').didRepoOptOut;
 const checkRateLimit = require('./helpers').checkRateLimit;
 const addBackstrokeBotAsCollaborator = require('./helpers').addBackstrokeBotAsCollaborator;
 const forkRepository = require('./helpers').forkRepository;
+const didRepoOptInToPullRequests = require('./helpers').didRepoOptInToPullRequests;
 
 const tmp = require('tmp-promise');
 const nodegit = require('nodegit');
@@ -188,6 +189,7 @@ if (require.main === module) {
       createPullRequest,
       didRepoOptOut,
       rawPullRequestCreate,
+      didRepoOptInToPullRequests,
       nodegit,
       tmp,
       addBackstrokeBotAsCollaborator,
