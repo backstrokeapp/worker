@@ -103,6 +103,7 @@ async function processFromQueue(
       await didNotGoOverRateLimit(debug, checkRateLimit);
 
       // Ensure that the user has opted into pull requests from its upstream
+      debug(`Verifying that a pull request can be created on ${link.forkOwner}/${link.forkRepo}...`);
       const canMakePullRequest = await didRepoOptInToPullRequests(user, link.forkOwner, link.forkRepo);
       if (canMakePullRequest) {
         debug(`Allowed to make a pull request on the fork: ${link.forkOwner}/${link.forkRepo}`);
@@ -131,6 +132,7 @@ async function processFromQueue(
         }
       } else {
         debug(`Cannot make a pull request on the fork: ${link.forkOwner}/${link.forkRepo}. Continuing to next fork...`);
+        return {status: 'OK', optin: true, msg: `Fork didn't opt into pull requests`}
       }
     });
 
@@ -140,6 +142,7 @@ async function processFromQueue(
       metrics: {
         total: data.length,
         successes: data.filter(i => i.status === 'OK').length,
+        // numberOptedIn: data.filter(i => i.optin).length,
       },
       errors: data.filter(i => i.status === 'ERROR'),
       isEnabled: true,

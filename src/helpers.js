@@ -94,12 +94,12 @@ function didRepoOptInToPullRequests(user, owner, repo) {
     github.issues.getLabel({
       owner, repo,
       name: 'backstroke-sync',
-    }, (err, issues) => {
+    }, err => {
       if (err) {
         // A 404 means that we shouldn't make pull requests.
-        return false;
+        resolve(false);
       } else {
-        return true;
+        resolve(true);
       }
     });
   });

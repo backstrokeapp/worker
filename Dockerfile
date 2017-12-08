@@ -1,4 +1,4 @@
-FROM node:7.6
+FROM node:8.9
 MAINTAINER Ryan Gaus "rgaus.net"
 
 # Create a user to run the app and setup a place to put the app
