@@ -141,6 +141,7 @@ describe('webhook worker', () => {
       {owner: {login: 'another'}, name: 'repo'},
     ]);
     const didRepoOptOut = sinon.stub().resolves(false);
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
     const pullRequestMock = sinon.stub().yields(null);
     const githubPullRequestsCreate = () => pullRequestMock;
@@ -200,7 +201,8 @@ describe('webhook worker', () => {
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      githubPullRequestsCreate
+      githubPullRequestsCreate,
+      didRepoOptInToPullRequests
     );
 
     // Make sure that it worked
@@ -666,6 +668,8 @@ describe('webhook worker', () => {
     ]);
     const didRepoOptOut = sinon.stub().resolves(false);
 
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
+
     const pullRequestMock = sinon.stub();
     pullRequestMock.onCall(0).yields(null);
     pullRequestMock.onCall(1).yields(new Error('Something bad happened.'));
@@ -726,7 +730,8 @@ describe('webhook worker', () => {
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      githubPullRequestsCreate
+      githubPullRequestsCreate,
+      didRepoOptInToPullRequests
     );
 
     // Make sure that it worked
@@ -746,6 +751,95 @@ describe('webhook worker', () => {
 
     // Should have created two pull requests.
     assert.equal(pullRequestMock.callCount, 2);
+  });
+  it('should create a pull request on each fork when given a bunch of forks, except for one that doesnt opt in', async () => {
+    const createPullRequest = require('./helpers').createPullRequest;
+    const getForksForRepo = sinon.stub().resolves([
+      {owner: {login: 'hello'}, name: 'world'},
+      {owner: {login: 'another'}, name: 'repo'},
+    ]);
+    const didRepoOptOut = sinon.stub().resolves(false);
+
+    const didRepoOptInToPullRequests = sinon.stub();
+    didRepoOptInToPullRequests.onCall(0).resolves(true);
+    didRepoOptInToPullRequests.onCall(1).resolves(false);
+
+    const pullRequestMock = sinon.stub();
+    pullRequestMock.onCall(0).yields(null);
+    pullRequestMock.onCall(1).yields(new Error('Something bad happened.'));
+    const githubPullRequestsCreate = () => pullRequestMock;
+
+    const enqueuedAs = await MockWebhookQueue.push({
+      type: 'MANUAL',
+      user: {
+        id: 1,
+        username: '1egoman',
+        email: null,
+        githubId: '1704236',
+        accessToken: 'ACCESS TOKEN',
+        publicScope: false,
+        createdAt: '2017-08-09T12:00:36.000Z',
+        lastLoggedInAt: '2017-08-16T12:50:40.203Z',
+        updatedAt: '2017-08-16T12:50:40.204Z',
+      },
+      link: {
+        id: 8,
+        name: 'foo',
+        enabled: true,
+        webhookId: '37948270678a440a97db01ebe71ddda2',
+        lastSyncedAt: '2017-08-17T11:37:22.999Z',
+        upstreamType: 'repo',
+        upstreamOwner: '1egoman',
+        upstreamRepo: 'biome',
+        upstreamIsFork: null,
+        upstreamBranches: '["inject","master"]',
+        upstreamBranch: 'master',
+        forkType: 'fork-all',
+        forkOwner: undefined,
+        forkRepo: undefined,
+        forkBranches: undefined,
+        forkBranch: undefined,
+        createdAt: '2017-08-11T10:17:09.614Z',
+        updatedAt: '2017-08-17T11:37:23.001Z',
+        ownerId: 1,
+        owner: {
+          id: 1,
+          username: '1egoman',
+          email: null,
+          githubId: '1704236',
+          accessToken: 'ACCESS TOKEN',
+          publicScope: false,
+          createdAt: '2017-08-09T12:00:36.000Z',
+          lastLoggedInAt: '2017-08-16T12:50:40.203Z',
+          updatedAt: '2017-08-16T12:50:40.204Z',
+        },
+      },
+    });
+
+    // Run the worker that eats off the queue.
+    await processBatch(
+      MockWebhookQueue,
+      MockWebhookStatusStore,
+      () => null, //console.log.bind(console, '* '),
+      getForksForRepo,
+      createPullRequest,
+      didRepoOptOut,
+      githubPullRequestsCreate,
+      didRepoOptInToPullRequests
+    );
+
+    // Make sure that it worked
+    const response = MockWebhookStatusStore.keys[enqueuedAs].status;
+    assert.equal(response.status, 'OK');
+    assert.deepEqual(response.output, {
+      many: true,
+      metrics: {total: 2, successes: 2},
+      errors: [],
+      isEnabled: true,
+    });
+
+    // Should have created one pull requests. (one repo wasn't allowed)
+    assert.equal(pullRequestMock.callCount, 1);
   });
 
   it('should create a pull request when given a single fork, adding the request id properly', async () => {
@@ -824,7 +918,7 @@ describe('webhook worker', () => {
     assert.deepEqual(response.fromRequest, 'AC120001:C5A6_AC120009:0050_5A229DF8_0004:0007');
   });
 
-  it('should create a pull request when given an unrelated repo, by joinging through the bot user account', async () => {
+  it('should create a pull request when given an unrelated repo, by joining through the bot user account', async () => {
     const createPullRequest = require('./helpers').createPullRequest;
     const getForksForRepo = sinon.stub().resolves([{
       owner: {login: 'foo'},
@@ -900,6 +994,7 @@ describe('webhook worker', () => {
       createPullRequest,
       didRepoOptOut,
       githubPullRequestsCreate,
+      undefined, // didRepoOptInToPullRequests
       nodegit,
       tmp,
       addBackstrokeBotAsCollaborator,
@@ -1016,6 +1111,7 @@ describe('webhook worker', () => {
       createPullRequest,
       didRepoOptOut,
       githubPullRequestsCreate,
+      undefined, // didRepoOptInToPullRequests
       nodegit,
       tmp,
       addBackstrokeBotAsCollaborator,

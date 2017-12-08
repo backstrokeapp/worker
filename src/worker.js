@@ -32,6 +32,7 @@ async function processFromQueue(
   createPullRequest,
   didRepoOptOut,
   githubPullRequestsCreate,
+  didRepoOptInToPullRequests,
   nodegit,
   tmp,
   addBackstrokeBotAsCollaborator,
@@ -101,27 +102,37 @@ async function processFromQueue(
       // Ensure we didn't go over the token rate limit prior to making the pull request.
       await didNotGoOverRateLimit(debug, checkRateLimit);
 
-      try {
-        const data = await createPullRequest(
-          user,
-          link,
-          { // Upstream
-            owner: link.upstreamOwner,
-            repo: link.upstreamRepo,
-            branch: link.upstreamBranch,
-          },
-          { // Fork
-            owner: fork.owner.login,
-            repo: fork.name,
-            branch: link.forkBranch,
-          },
-          debug,
-          didRepoOptOut,
-          githubPullRequestsCreate
-        );
-        return {status: 'OK', data};
-      } catch (error) {
-        return {status: 'ERROR', error: error.message};
+      // Ensure that the user has opted into pull requests from its upstream
+      debug(`Verifying that a pull request can be created on ${link.forkOwner}/${link.forkRepo}...`);
+      const canMakePullRequest = await didRepoOptInToPullRequests(user, link.forkOwner, link.forkRepo);
+      if (canMakePullRequest) {
+        debug(`Allowed to make a pull request on the fork: ${link.forkOwner}/${link.forkRepo}`);
+
+        try {
+          const data = await createPullRequest(
+            user,
+            link,
+            { // Upstream
+              owner: link.upstreamOwner,
+              repo: link.upstreamRepo,
+              branch: link.upstreamBranch,
+            },
+            { // Fork
+              owner: fork.owner.login,
+              repo: fork.name,
+              branch: link.forkBranch,
+            },
+            debug,
+            didRepoOptOut,
+            githubPullRequestsCreate
+          );
+          return {status: 'OK', data};
+        } catch (error) {
+          return {status: 'ERROR', error: error.message};
+        }
+      } else {
+        debug(`Cannot make a pull request on the fork: ${link.forkOwner}/${link.forkRepo}. Continuing to next fork...`);
+        return {status: 'OK', optin: true, msg: `Fork didn't opt into pull requests`}
       }
     });
 
@@ -131,6 +142,7 @@ async function processFromQueue(
       metrics: {
         total: data.length,
         successes: data.filter(i => i.status === 'OK').length,
+        // numberOptedIn: data.filter(i => i.optin).length,
       },
       errors: data.filter(i => i.status === 'ERROR'),
       isEnabled: true,
@@ -240,6 +252,7 @@ module.exports = async function processBatch(
   createPullRequest,
   didRepoOptOut,
   githubPullRequestsCreate,
+  didRepoOptInToPullRequests,
   nodegit,
   tmp,
   addBackstrokeBotAsCollaborator,
@@ -291,6 +304,7 @@ module.exports = async function processBatch(
         createPullRequest,
         didRepoOptOut,
         githubPullRequestsCreate,
+        didRepoOptInToPullRequests,
         nodegit,
         tmp,
         addBackstrokeBotAsCollaborator,
