@@ -99,14 +99,17 @@ async function processFromQueue(
 
     debug(`Found ${forks.length} forks of the upstream.`);
     const all = forks.map(async fork => {
+      const forkOwner = fork.owner.login;
+      const forkRepo = fork.name;
+
       // Ensure we didn't go over the token rate limit prior to making the pull request.
       await didNotGoOverRateLimit(debug, checkRateLimit);
 
       // Ensure that the user has opted into pull requests from its upstream
-      debug(`Verifying that a pull request can be created on ${link.forkOwner}/${link.forkRepo}...`);
-      const canMakePullRequest = await didRepoOptInToPullRequests(user, link.forkOwner, link.forkRepo);
+      debug(`Verifying that a pull request can be created on ${forkOwner}/${forkRepo}...`);
+      const canMakePullRequest = await didRepoOptInToPullRequests(user, forkOwner, forkRepo);
       if (canMakePullRequest) {
-        debug(`Allowed to make a pull request on the fork: ${link.forkOwner}/${link.forkRepo}`);
+        debug(`Allowed to make a pull request on the fork: ${forkOwner}/${forkRepo}`);
 
         try {
           const data = await createPullRequest(
@@ -118,8 +121,8 @@ async function processFromQueue(
               branch: link.upstreamBranch,
             },
             { // Fork
-              owner: fork.owner.login,
-              repo: fork.name,
+              owner: forkOwner,
+              repo: forkRepo,
               branch: link.forkBranch,
             },
             debug,
