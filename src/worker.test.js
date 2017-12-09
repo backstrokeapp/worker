@@ -840,6 +840,12 @@ describe('webhook worker', () => {
 
     // Should have created one pull requests. (one repo wasn't allowed)
     assert.equal(pullRequestMock.callCount, 1);
+
+    // Ensure that the call to `didRepoOptInToPullRequests` was called with the right values
+    assert.equal(didRepoOptInToPullRequests.firstCall.args[1], 'hello');
+    assert.equal(didRepoOptInToPullRequests.firstCall.args[2], 'world');
+    assert.equal(didRepoOptInToPullRequests.lastCall.args[1], 'another');
+    assert.equal(didRepoOptInToPullRequests.lastCall.args[2], 'repo');
   });
 
   it('should create a pull request when given a single fork, adding the request id properly', async () => {
