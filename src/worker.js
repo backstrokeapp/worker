@@ -134,7 +134,7 @@ async function processFromQueue(
           return {status: 'ERROR', error: error.message};
         }
       } else {
-        debug(`Cannot make a pull request on the fork: ${link.forkOwner}/${link.forkRepo}. Continuing to next fork...`);
+        debug(`Cannot make a pull request on the fork: ${forkOwner}/${forkRepo}. Continuing to next fork...`);
         return {status: 'OK', optin: true, msg: `Fork didn't opt into pull requests`}
       }
     });
