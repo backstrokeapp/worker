@@ -243,6 +243,16 @@ async function createPullRequest(user, link, upstream, fork, debug, didRepoOptOu
       await addBackstrokeBotAsCollaborator(fork.owner, fork.repo);
     }
 
+    console.log({
+      owner: fork.owner,
+      repo: fork.repo,
+      title: generatePullRequestTitle(link.upstreamOwner, link.upstreamRepo, link.upstreamBranch),
+      head: `${upstream.owner}:${upstream.branch}`,
+      base: link.forkType === 'fork-all' ? upstream.branch : fork.branch,
+      body: generatePullRequestBody(link),
+      maintainer_can_modify: false,
+    })
+
     // Create a new pull request from the upstream to the child.
     return new Promise((resolve, reject) => {
       return githubPullRequestsCreate(github)({
