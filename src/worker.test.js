@@ -110,15 +110,15 @@ describe('webhook worker', () => {
     });
 
     // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, //console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
       githubPullRequestsCreate
-    );
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
@@ -194,16 +194,16 @@ describe('webhook worker', () => {
     });
 
     // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, //console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
       githubPullRequestsCreate,
-      didRepoOptInToPullRequests
-    );
+      didRepoOptInToPullRequests,
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
@@ -233,6 +233,7 @@ describe('webhook worker', () => {
 
     const pullRequestMock = sinon.stub().yields(null);
     const githubPullRequestsCreate = () => pullRequestMock;
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
     const enqueuedAs = await MockWebhookQueue.push({
       type: 'MANUAL',
@@ -282,15 +283,16 @@ describe('webhook worker', () => {
     });
 
     // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, //console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      githubPullRequestsCreate
-    );
+      githubPullRequestsCreate,
+      didRepoOptInToPullRequests,
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
@@ -307,6 +309,7 @@ describe('webhook worker', () => {
 
     const pullRequestMock = sinon.stub().yields({code: 422}); // 422 = pull request already exists
     const githubPullRequestsCreate = () => pullRequestMock;
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
     const enqueuedAs = await MockWebhookQueue.push({
       type: 'MANUAL',
@@ -356,15 +359,16 @@ describe('webhook worker', () => {
     });
 
     // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, //console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      githubPullRequestsCreate
-    );
+      githubPullRequestsCreate,
+      didRepoOptInToPullRequests,
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
@@ -381,6 +385,7 @@ describe('webhook worker', () => {
 
     const pullRequestMock = sinon.stub().yields(new Error('Unknown Error!'));
     const githubPullRequestsCreate = () => pullRequestMock;
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
     const enqueuedAs = await MockWebhookQueue.push({
       type: 'MANUAL',
@@ -430,15 +435,16 @@ describe('webhook worker', () => {
     });
 
     // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, //console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      githubPullRequestsCreate
-    );
+      githubPullRequestsCreate,
+      didRepoOptInToPullRequests,
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
@@ -455,6 +461,7 @@ describe('webhook worker', () => {
 
     const pullRequestMock = sinon.stub().yields(null);
     const githubPullRequestsCreate = () => pullRequestMock;
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
     const enqueuedAs = await MockWebhookQueue.push({
       type: 'MANUAL',
@@ -504,15 +511,16 @@ describe('webhook worker', () => {
     });
 
     // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, //console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      githubPullRequestsCreate
-    );
+      githubPullRequestsCreate,
+      didRepoOptInToPullRequests,
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
@@ -526,6 +534,9 @@ describe('webhook worker', () => {
       name: 'bar',
     }]);
     const didRepoOptOut = sinon.stub().resolves(false);
+    const pullRequestMock = sinon.stub().yields(null);
+    const githubPullRequestsCreate = () => pullRequestMock;
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
     const enqueuedAs = await MockWebhookQueue.push({
       type: 'MANUAL',
@@ -575,14 +586,16 @@ describe('webhook worker', () => {
     });
 
     // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, // console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut
-    );
+      didRepoOptOut,
+      githubPullRequestsCreate,
+      didRepoOptInToPullRequests,
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
@@ -596,6 +609,7 @@ describe('webhook worker', () => {
       name: 'bar',
     }]);
     const didRepoOptOut = sinon.stub().rejects(new Error(`Repository foo/bar doesn't exist!`));
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
     const enqueuedAs = await MockWebhookQueue.push({
       type: 'MANUAL',
@@ -645,14 +659,15 @@ describe('webhook worker', () => {
     });
 
     // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, // console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
-      require('./helpers').createPullRequest,
-      didRepoOptOut
-    );
+      createPullRequest: require('./helpers').createPullRequest,
+      didRepoOptOut,
+      didRepoOptInToPullRequests,
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
@@ -723,16 +738,16 @@ describe('webhook worker', () => {
     });
 
     // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, //console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
       githubPullRequestsCreate,
-      didRepoOptInToPullRequests
-    );
+      didRepoOptInToPullRequests,
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
@@ -816,17 +831,16 @@ describe('webhook worker', () => {
       },
     });
 
-    // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, //console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
       githubPullRequestsCreate,
-      didRepoOptInToPullRequests
-    );
+      didRepoOptInToPullRequests,
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
@@ -856,6 +870,7 @@ describe('webhook worker', () => {
     }]);
     const didRepoOptOut = sinon.stub().resolves(false);
     const githubPullRequestsCreate = () => sinon.stub().yields(null);
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
     const enqueuedAs = await MockWebhookQueue.push({
       type: 'MANUAL',
@@ -906,15 +921,16 @@ describe('webhook worker', () => {
     });
 
     // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, //console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      githubPullRequestsCreate
-    );
+      githubPullRequestsCreate,
+      didRepoOptInToPullRequests,
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
@@ -943,6 +959,7 @@ describe('webhook worker', () => {
     };
     const addBackstrokeBotAsCollaborator = sinon.stub().resolves();
     const forkRepository = sinon.stub().resolves();
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
     const enqueuedAs = await MockWebhookQueue.push({
       type: 'MANUAL',
@@ -992,20 +1009,20 @@ describe('webhook worker', () => {
     });
 
     // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, //console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
       githubPullRequestsCreate,
-      undefined, // didRepoOptInToPullRequests
+      didRepoOptInToPullRequests,
       nodegit,
       tmp,
       addBackstrokeBotAsCollaborator,
-      forkRepository
-    );
+      forkRepository,
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;
@@ -1060,6 +1077,7 @@ describe('webhook worker', () => {
     };
     const addBackstrokeBotAsCollaborator = sinon.stub().resolves();
     const forkRepository = sinon.stub().resolves();
+    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
     const enqueuedAs = await MockWebhookQueue.push({
       type: 'MANUAL',
@@ -1109,20 +1127,20 @@ describe('webhook worker', () => {
     });
 
     // Run the worker that eats off the queue.
-    await processBatch(
-      MockWebhookQueue,
-      MockWebhookStatusStore,
-      () => null, //console.log.bind(console, '* '),
+    await processBatch({
+      WebhookQueue: MockWebhookQueue,
+      WebhookStatusStore: MockWebhookStatusStore,
+      debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
       githubPullRequestsCreate,
-      undefined, // didRepoOptInToPullRequests
+      didRepoOptInToPullRequests,
       nodegit,
       tmp,
       addBackstrokeBotAsCollaborator,
-      forkRepository
-    );
+      forkRepository,
+    });
 
     // Make sure that it worked
     const response = MockWebhookStatusStore.keys[enqueuedAs].status;

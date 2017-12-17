@@ -181,22 +181,22 @@ if (require.main === module) {
 
   // Kick off the batch!
   function go(done) {
-    processBatch(
+    processBatch({
       WebhookQueue,
       WebhookStatusStore,
-      logger,
+      debug: logger,
       getForksForRepo,
       createPullRequest,
       didRepoOptOut,
-      rawPullRequestCreate,
+      githubPullRequestsCreate,
       didRepoOptInToPullRequests,
       nodegit,
       tmp,
       addBackstrokeBotAsCollaborator,
       forkRepository,
       throttleBatch,
-      checkRateLimit
-    ).then(() => {
+      checkRateLimit,
+    }).then(() => {
       done();
     }).catch(err => {
       console.error('Error:');

@@ -27,19 +27,25 @@ const OK = 'OK',
 async function processFromQueue(
   link,
   user,
-  debug,
-  getForksForRepo,
-  createPullRequest,
-  didRepoOptOut,
-  githubPullRequestsCreate,
-  didRepoOptInToPullRequests,
-  nodegit,
-  tmp,
-  addBackstrokeBotAsCollaborator,
-  forkRepository,
-  throttleBatch=0,
-  checkRateLimit=false
+  {
+    debug,
+    getForksForRepo,
+    createPullRequest,
+    didRepoOptOut,
+    githubPullRequestsCreate,
+    didRepoOptInToPullRequests,
+    nodegit,
+    tmp,
+    addBackstrokeBotAsCollaborator,
+    forkRepository,
+    throttleBatch,
+    checkRateLimit,
+  }
 ) {
+  // Set default values for a few dependencies.
+  throttleBatch = throttleBatch || 0;
+  checkRateLimit = checkRateLimit || false;
+
   // Provide a mechanism to throttle queue operations so that rate limits won't expire.
   if (throttleBatch > 0) {
     await (new Promise(resolve => setTimeout(resolve, throttleBatch)));
@@ -247,22 +253,8 @@ async function processFromQueue(
 
 
 // The batch processing function. Eats off the queue and publishes results to redis.
-module.exports = async function processBatch(
-  WebhookQueue,
-  WebhookStatusStore,
-  debug,
-  getForksForRepo,
-  createPullRequest,
-  didRepoOptOut,
-  githubPullRequestsCreate,
-  didRepoOptInToPullRequests,
-  nodegit,
-  tmp,
-  addBackstrokeBotAsCollaborator,
-  forkRepository,
-  throttleBatch=0,
-  checkRateLimit=false
-) {
+module.exports = async function processBatch(dependencies) {
+  const { WebhookQueue, WebhookStatusStore, debug, checkRateLimit } = dependencies;
   while (true) {
     // Ensure we didn't go over the token rate limit prior to handling another link.
     await didNotGoOverRateLimit(debug, checkRateLimit);
@@ -299,22 +291,7 @@ module.exports = async function processBatch(
 
     // Perform the action.
     try {
-      const output = await processFromQueue(
-        link,
-        user,
-        debug,
-        getForksForRepo,
-        createPullRequest,
-        didRepoOptOut,
-        githubPullRequestsCreate,
-        didRepoOptInToPullRequests,
-        nodegit,
-        tmp,
-        addBackstrokeBotAsCollaborator,
-        forkRepository,
-        throttleBatch,
-        checkRateLimit
-      );
+      const output = await processFromQueue(link, user, dependencies);
       debug('Result:', output);
 
       // Successful! Update redis to say so.
