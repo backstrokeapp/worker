@@ -187,7 +187,6 @@ if (require.main === module) {
       debug: logger,
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut,
       githubPullRequestsCreate,
       didRepoOptInToPullRequests,
       nodegit,

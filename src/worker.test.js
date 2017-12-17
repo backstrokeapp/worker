@@ -59,8 +59,8 @@ describe('webhook worker', () => {
       owner: {login: 'foo'},
       name: 'bar',
     }]);
-    const didRepoOptOut = sinon.stub().resolves(false);
-    const githubPullRequestsCreate = () => sinon.stub().yields(null);
+    const prMock = sinon.stub().yields(null);
+    const githubPullRequestsCreate = () => prMock;
 
     const enqueuedAs = await MockWebhookQueue.push({
       type: 'MANUAL',
@@ -116,8 +116,7 @@ describe('webhook worker', () => {
       debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut,
-      githubPullRequestsCreate
+      githubPullRequestsCreate,
     });
 
     // Make sure that it worked
@@ -130,6 +129,9 @@ describe('webhook worker', () => {
       response: 'Successfully synced link.',
     });
 
+    // Make sure that a pull request was created
+    assert.equal(prMock.callCount, 1);
+
     // Make sure that the operation was properly attached to the link
     // 8 = link id, enqueuedAs = link operation id
     assert.deepEqual(MockWebhookStatusStore.links[8], [enqueuedAs]);
@@ -140,7 +142,6 @@ describe('webhook worker', () => {
       {owner: {login: 'hello'}, name: 'world'},
       {owner: {login: 'another'}, name: 'repo'},
     ]);
-    const didRepoOptOut = sinon.stub().resolves(false);
     const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
     const pullRequestMock = sinon.stub().yields(null);
@@ -200,7 +201,6 @@ describe('webhook worker', () => {
       debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut,
       githubPullRequestsCreate,
       didRepoOptInToPullRequests,
     });
@@ -223,89 +223,12 @@ describe('webhook worker', () => {
     assert.deepEqual(MockWebhookStatusStore.links[8], [enqueuedAs]);
   });
 
-  it('should try to make a PR to a single fork of an upstream, but the repo opted out', async () => {
-    const createPullRequest = require('./helpers').createPullRequest;
-    const getForksForRepo = sinon.stub().resolves([{
-      owner: {login: 'foo'},
-      name: 'bar',
-    }]);
-    const didRepoOptOut = sinon.stub().resolves(true);
-
-    const pullRequestMock = sinon.stub().yields(null);
-    const githubPullRequestsCreate = () => pullRequestMock;
-    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
-
-    const enqueuedAs = await MockWebhookQueue.push({
-      type: 'MANUAL',
-      user: {
-        id: 1,
-        username: '1egoman',
-        email: null,
-        githubId: '1704236',
-        accessToken: 'ACCESS TOKEN',
-        publicScope: false,
-        createdAt: '2017-08-09T12:00:36.000Z',
-        lastLoggedInAt: '2017-08-16T12:50:40.203Z',
-        updatedAt: '2017-08-16T12:50:40.204Z',
-      },
-      link: {
-        id: 8,
-        name: 'foo',
-        enabled: true,
-        webhookId: '37948270678a440a97db01ebe71ddda2',
-        lastSyncedAt: '2017-08-17T11:37:22.999Z',
-        upstreamType: 'repo',
-        upstreamOwner: '1egoman',
-        upstreamRepo: 'biome',
-        upstreamIsFork: null,
-        upstreamBranches: '["inject","master"]',
-        upstreamBranch: 'master',
-        forkType: 'repo',
-        forkOwner: 'rgaus',
-        forkRepo: 'biome',
-        forkBranches: '["master"]',
-        forkBranch: 'master',
-        createdAt: '2017-08-11T10:17:09.614Z',
-        updatedAt: '2017-08-17T11:37:23.001Z',
-        ownerId: 1,
-        owner: {
-          id: 1,
-          username: '1egoman',
-          email: null,
-          githubId: '1704236',
-          accessToken: 'ACCESS TOKEN',
-          publicScope: false,
-          createdAt: '2017-08-09T12:00:36.000Z',
-          lastLoggedInAt: '2017-08-16T12:50:40.203Z',
-          updatedAt: '2017-08-16T12:50:40.204Z',
-        }
-      },
-    });
-
-    // Run the worker that eats off the queue.
-    await processBatch({
-      WebhookQueue: MockWebhookQueue,
-      WebhookStatusStore: MockWebhookStatusStore,
-      debug: () => null, //console.log.bind(console, '* '),
-      getForksForRepo,
-      createPullRequest,
-      didRepoOptOut,
-      githubPullRequestsCreate,
-      didRepoOptInToPullRequests,
-    });
-
-    // Make sure that it worked
-    const response = MockWebhookStatusStore.keys[enqueuedAs].status;
-    assert.equal(response.status, 'ERROR');
-    assert.equal(response.output.error, 'This repo opted out of backstroke pull requests');
-  });
   it('should try to make a PR to a single fork of an upstream, but a pull request already exists', async () => {
     const createPullRequest = require('./helpers').createPullRequest;
     const getForksForRepo = sinon.stub().resolves([{
       owner: {login: 'foo'},
       name: 'bar',
     }]);
-    const didRepoOptOut = sinon.stub().resolves(false);
 
     const pullRequestMock = sinon.stub().yields({code: 422}); // 422 = pull request already exists
     const githubPullRequestsCreate = () => pullRequestMock;
@@ -365,7 +288,6 @@ describe('webhook worker', () => {
       debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut,
       githubPullRequestsCreate,
       didRepoOptInToPullRequests,
     });
@@ -381,7 +303,6 @@ describe('webhook worker', () => {
       owner: {login: 'foo'},
       name: 'bar',
     }]);
-    const didRepoOptOut = sinon.stub().resolves(false);
 
     const pullRequestMock = sinon.stub().yields(new Error('Unknown Error!'));
     const githubPullRequestsCreate = () => pullRequestMock;
@@ -441,7 +362,6 @@ describe('webhook worker', () => {
       debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut,
       githubPullRequestsCreate,
       didRepoOptInToPullRequests,
     });
@@ -457,7 +377,6 @@ describe('webhook worker', () => {
       owner: {login: 'foo'},
       name: 'bar',
     }]);
-    const didRepoOptOut = sinon.stub().resolves(false);
 
     const pullRequestMock = sinon.stub().yields(null);
     const githubPullRequestsCreate = () => pullRequestMock;
@@ -517,7 +436,6 @@ describe('webhook worker', () => {
       debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut,
       githubPullRequestsCreate,
       didRepoOptInToPullRequests,
     });
@@ -533,7 +451,6 @@ describe('webhook worker', () => {
       owner: {login: 'foo'},
       name: 'bar',
     }]);
-    const didRepoOptOut = sinon.stub().resolves(false);
     const pullRequestMock = sinon.stub().yields(null);
     const githubPullRequestsCreate = () => pullRequestMock;
     const didRepoOptInToPullRequests = sinon.stub().resolves(true);
@@ -592,7 +509,6 @@ describe('webhook worker', () => {
       debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut,
       githubPullRequestsCreate,
       didRepoOptInToPullRequests,
     });
@@ -602,78 +518,6 @@ describe('webhook worker', () => {
     assert.equal(response.status, 'ERROR');
     assert.equal(response.output.error, 'Please define both an upstream and fork on this link.');
   });
-  it(`should make a PR to a single fork of an upstream, but fork is a repository that doesn't exist`, async () => {
-    const createPullRequest = sinon.stub().yields([null]);
-    const getForksForRepo = sinon.stub().resolves([{
-      owner: {login: 'foo'},
-      name: 'bar',
-    }]);
-    const didRepoOptOut = sinon.stub().rejects(new Error(`Repository foo/bar doesn't exist!`));
-    const didRepoOptInToPullRequests = sinon.stub().resolves(true);
-
-    const enqueuedAs = await MockWebhookQueue.push({
-      type: 'MANUAL',
-      user: {
-        id: 1,
-        username: '1egoman',
-        email: null,
-        githubId: '1704236',
-        accessToken: 'ACCESS TOKEN',
-        publicScope: false,
-        createdAt: '2017-08-09T12:00:36.000Z',
-        lastLoggedInAt: '2017-08-16T12:50:40.203Z',
-        updatedAt: '2017-08-16T12:50:40.204Z',
-      },
-      link: {
-        id: 8,
-        name: 'My Link',
-        enabled: true,
-        webhookId: '37948270678a440a97db01ebe71ddda2',
-        lastSyncedAt: '2017-08-17T11:37:22.999Z',
-        upstreamType: 'repo',
-        upstreamOwner: '1egoman',
-        upstreamRepo: 'backstroke',
-        upstreamIsFork: null,
-        upstreamBranches: '["inject","master"]',
-        upstreamBranch: 'master',
-        forkType: 'repo',
-        forkOwner: 'rgaus',
-        forkRepo: 'backstroke',
-        forkBranches: '["master"]',
-        forkBranch: 'master',
-        createdAt: '2017-08-11T10:17:09.614Z',
-        updatedAt: '2017-08-17T11:37:23.001Z',
-        ownerId: 1,
-        owner: {
-          id: 1,
-          username: '1egoman',
-          email: null,
-          githubId: '1704236',
-          accessToken: 'ACCESS TOKEN',
-          publicScope: false,
-          createdAt: '2017-08-09T12:00:36.000Z',
-          lastLoggedInAt: '2017-08-16T12:50:40.203Z',
-          updatedAt: '2017-08-16T12:50:40.204Z',
-        }
-      },
-    });
-
-    // Run the worker that eats off the queue.
-    await processBatch({
-      WebhookQueue: MockWebhookQueue,
-      WebhookStatusStore: MockWebhookStatusStore,
-      debug: () => null, //console.log.bind(console, '* '),
-      getForksForRepo,
-      createPullRequest: require('./helpers').createPullRequest,
-      didRepoOptOut,
-      didRepoOptInToPullRequests,
-    });
-
-    // Make sure that it worked
-    const response = MockWebhookStatusStore.keys[enqueuedAs].status;
-    assert.equal(response.status, 'ERROR');
-    assert.equal(response.output.error, `Repository foo/bar doesn't exist!`);
-  });
 
   it('should create a pull request on each fork when given a bunch of forks, but one fails', async () => {
     const createPullRequest = require('./helpers').createPullRequest;
@@ -681,7 +525,6 @@ describe('webhook worker', () => {
       {owner: {login: 'hello'}, name: 'world'},
       {owner: {login: 'another'}, name: 'repo'},
     ]);
-    const didRepoOptOut = sinon.stub().resolves(false);
 
     const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
@@ -744,7 +587,6 @@ describe('webhook worker', () => {
       debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut,
       githubPullRequestsCreate,
       didRepoOptInToPullRequests,
     });
@@ -773,7 +615,6 @@ describe('webhook worker', () => {
       {owner: {login: 'hello'}, name: 'world'},
       {owner: {login: 'another'}, name: 'repo'},
     ]);
-    const didRepoOptOut = sinon.stub().resolves(false);
 
     const didRepoOptInToPullRequests = sinon.stub();
     didRepoOptInToPullRequests.onCall(0).resolves(true);
@@ -837,7 +678,6 @@ describe('webhook worker', () => {
       debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut,
       githubPullRequestsCreate,
       didRepoOptInToPullRequests,
     });
@@ -868,7 +708,6 @@ describe('webhook worker', () => {
       owner: {login: 'foo'},
       name: 'bar',
     }]);
-    const didRepoOptOut = sinon.stub().resolves(false);
     const githubPullRequestsCreate = () => sinon.stub().yields(null);
     const didRepoOptInToPullRequests = sinon.stub().resolves(true);
 
@@ -927,7 +766,6 @@ describe('webhook worker', () => {
       debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut,
       githubPullRequestsCreate,
       didRepoOptInToPullRequests,
     });
@@ -946,7 +784,6 @@ describe('webhook worker', () => {
       owner: {login: 'foo'},
       name: 'bar',
     }]);
-    const didRepoOptOut = sinon.stub().resolves(false);
     const prMock = sinon.stub().yields(null);
     const githubPullRequestsCreate = () => prMock;
 
@@ -1015,7 +852,6 @@ describe('webhook worker', () => {
       debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut,
       githubPullRequestsCreate,
       didRepoOptInToPullRequests,
       nodegit,
@@ -1064,7 +900,6 @@ describe('webhook worker', () => {
       owner: {login: 'foo'},
       name: 'bar',
     }]);
-    const didRepoOptOut = sinon.stub().resolves(false);
     const prMock = sinon.stub().yields(null);
     const githubPullRequestsCreate = () => prMock;
 
@@ -1133,7 +968,6 @@ describe('webhook worker', () => {
       debug: () => null, //console.log.bind(console, '* '),
       getForksForRepo,
       createPullRequest,
-      didRepoOptOut,
       githubPullRequestsCreate,
       didRepoOptInToPullRequests,
       nodegit,

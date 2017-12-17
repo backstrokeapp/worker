@@ -31,7 +31,6 @@ async function processFromQueue(
     debug,
     getForksForRepo,
     createPullRequest,
-    didRepoOptOut,
     githubPullRequestsCreate,
     didRepoOptInToPullRequests,
     nodegit,
@@ -82,7 +81,6 @@ async function processFromQueue(
         branch: link.upstreamBranch, // same branch as the upstream. TODO: make this configurable.
       },
       debug,
-      didRepoOptOut,
       githubPullRequestsCreate
     );
 
@@ -132,7 +130,6 @@ async function processFromQueue(
               branch: link.forkBranch,
             },
             debug,
-            didRepoOptOut,
             githubPullRequestsCreate
           );
           return {status: 'OK', data};
@@ -232,7 +229,6 @@ async function processFromQueue(
         branch: link.forkBranch,
       },
       debug,
-      didRepoOptOut,
       githubPullRequestsCreate
     );
 
