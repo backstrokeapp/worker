@@ -93,7 +93,7 @@ const LINK = {
   },
 };
 
-describe('helpers', () => {
+describe('createPullRequest', () => {
   it('should create a pull request when given a valid fork and upstream', async () => {
     const createPr = sinon.stub().yields(null);
     const githubPullRequestsCreate = () => createPr;
@@ -190,5 +190,22 @@ describe('helpers', () => {
     });
 
     return Promise.all(all);
+  });
+});
+
+describe('generatePullRequestBody', () => {
+  it('should return a multiline string', () => {
+    const response = generatePullRequestBody(LINK);
+
+    // Returns a multiline string
+    assert.equal(typeof response, 'string');
+    assert.notEqual(response.indexOf('\n'), -1);
+  });
+});
+
+describe('generatePullRequestTitle', () => {
+  it('should return a string', () => {
+    const response = generatePullRequestTitle('user', 'repo', 'branch');
+    assert.equal(typeof response, 'string');
   });
 });
