@@ -241,9 +241,9 @@ async function createPullRequest(user, link, upstream, fork, debug, githubPullRe
         debug(`Already a pull request on ${fork.owner}/${fork.repo} from ${link.upstreamOwner}/${link.upstreamRepo}`);
         resolve(message);
       } else if (err && err.code === 404) {
-        reject(new Error(`Repository ${fork.owner}/${fork.repo} doesn't exist.`));
+        resolve(`Repository ${fork.owner}/${fork.repo} doesn't exist.`);
       } else if (err && err.code === 500) {
-        reject(new Error(`Couldn't create pull request on repository ${fork.owner}/${fork.repo}: A Github api call returned a 500-class status code (${err.code}). Please try again.`));
+        resolve(`Couldn't create pull request on repository ${fork.owner}/${fork.repo}: A Github api call returned a 500-class status code (${err.code}). Please try again.`);
       } else if (err) {
         // Still reject anything else
         reject(new Error(`Couldn't create pull request on repository ${fork.owner}/${fork.repo}: ${err.message ? err.message : err}`));
@@ -262,4 +262,6 @@ module.exports = {
   checkRateLimit,
   forkRepository,
   addBackstrokeBotAsCollaborator,
+  generatePullRequestTitle,
+  generatePullRequestBody,
 };
