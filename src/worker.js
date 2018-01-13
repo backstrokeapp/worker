@@ -73,7 +73,7 @@ async function processFromQueue(
       { // Fork
         owner: link.forkOwner,
         repo: link.forkRepo,
-        branch: link.upstreamBranch, // same branch as the upstream. TODO: make this configurable.
+        branch: link.forkBranch || link.upstreamBranch,
       },
       debug,
       didRepoOptOut,

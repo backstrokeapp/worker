@@ -134,6 +134,93 @@ describe('webhook worker', () => {
     // 8 = link id, enqueuedAs = link operation id
     assert.deepEqual(MockWebhookStatusStore.links[8], [enqueuedAs]);
   });
+  it('should create a pull request when given a single fork to a custom branch', async () => {
+    const createPullRequest = require('./helpers').createPullRequest;
+    const getForksForRepo = sinon.stub().resolves([{
+      owner: {login: 'foo'},
+      name: 'bar',
+    }]);
+    const didRepoOptOut = sinon.stub().resolves(false);
+    const pr = sinon.stub().yields(null);
+    const githubPullRequestsCreate = () => pr;
+
+    const enqueuedAs = await MockWebhookQueue.push({
+      type: 'MANUAL',
+      user: {
+        id: 1,
+        username: '1egoman',
+        email: null,
+        githubId: '1704236',
+        accessToken: 'ACCESS TOKEN',
+        publicScope: false,
+        createdAt: '2017-08-09T12:00:36.000Z',
+        lastLoggedInAt: '2017-08-16T12:50:40.203Z',
+        updatedAt: '2017-08-16T12:50:40.204Z',
+      },
+      link: {
+        id: 8,
+        name: 'My Link',
+        enabled: true,
+        webhookId: '37948270678a440a97db01ebe71ddda2',
+        lastSyncedAt: '2017-08-17T11:37:22.999Z',
+        upstreamType: 'repo',
+        upstreamOwner: '1egoman',
+        upstreamRepo: 'backstroke',
+        upstreamIsFork: null,
+        upstreamBranches: '["inject","master"]',
+        upstreamBranch: 'master',
+        forkType: 'repo',
+        forkOwner: 'rgaus',
+        forkRepo: 'backstroke',
+        forkBranches: '["master"]',
+        forkBranch: 'some-branch-that-is-not-master', // <--
+        createdAt: '2017-08-11T10:17:09.614Z',
+        updatedAt: '2017-08-17T11:37:23.001Z',
+        ownerId: 1,
+        owner: {
+          id: 1,
+          username: '1egoman',
+          email: null,
+          githubId: '1704236',
+          accessToken: 'ACCESS TOKEN',
+          publicScope: false,
+          createdAt: '2017-08-09T12:00:36.000Z',
+          lastLoggedInAt: '2017-08-16T12:50:40.203Z',
+          updatedAt: '2017-08-16T12:50:40.204Z',
+        }
+      },
+    });
+
+    // Run the worker that eats off the queue.
+    await processBatch(
+      MockWebhookQueue,
+      MockWebhookStatusStore,
+      () => null, //console.log.bind(console, '* '),
+      getForksForRepo,
+      createPullRequest,
+      didRepoOptOut,
+      githubPullRequestsCreate
+    );
+
+    // Make sure that it worked
+    const response = MockWebhookStatusStore.keys[enqueuedAs].status;
+    assert.equal(response.status, 'OK');
+    assert.deepEqual(response.output, {
+      isEnabled: true,
+      many: false,
+      forkCount: 1,
+      response: 'Successfully synced link.',
+    });
+
+    // Make sure that the operation was properly attached to the link
+    // 8 = link id, enqueuedAs = link operation id
+    assert.deepEqual(MockWebhookStatusStore.links[8], [enqueuedAs]);
+
+    // Make sure that the pull request was created with the custom branch
+    assert.equal(pr.callCount, 1);
+    assert.equal(pr.firstCall.args[0].head, '1egoman:master');
+    assert.equal(pr.firstCall.args[0].base, 'some-branch-that-is-not-master');
+  });
   it('should create a pull request on each fork when given a bunch of forks', async () => {
     const createPullRequest = require('./helpers').createPullRequest;
     const getForksForRepo = sinon.stub().resolves([
